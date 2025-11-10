@@ -1,0 +1,173 @@
+syntax = "proto3";
+
+package synckit.protocol;
+
+import "types.proto";
+import "messages.proto";
+
+// Client initiates sync session
+message SyncRequest {
+  // Request ID for correlation
+  string request_id = 1;
+  
+  // Client's current checkpoint
+  SyncCheckpoint checkpoint = 2;
+  
+  // Client wants full sync or delta sync
+  bool full_sync = 3;
+  
+  // Specific documents to sync (empty = all)
+  repeated DocumentID document_ids = 4;
+  
+  // Client's pending changes (upload)
+  repeated Delta pending_deltas = 5;
+  
+  // Maximum deltas to receive in response
+  int32 max_deltas = 6;
+}
+
+// Server responds with changes
+message SyncResponse {
+  // Correlated request ID
+  string request_id = 1;
+  
+  // Response status
+  Status status = 2;
+  
+  // Error message if status != OK
+  string error_message = 3;
+  
+  // Server's deltas for client to apply
+  repeated Delta deltas = 4;
+  
+  // New checkpoint for client to save
+  SyncCheckpoint new_checkpoint = 5;
+  
+  // Has more deltas (pagination)
+  bool has_more = 6;
+  
+  // Next page token (if has_more = true)
+  string next_page_token = 7;
+}
+
+// Real-time update notification (server push)
+message SyncNotification {
+  // Notification ID
+  string notification_id = 1;
+  
+  // Delta to apply
+  Delta delta = 2;
+  
+  // Affected documents
+  repeated DocumentID document_ids = 3;
+}
+
+// Client acknowledges received notification
+message SyncAck {
+  // Notification ID being acknowledged
+  string notification_id = 1;
+  
+  // Client's new vector clock after applying
+  VectorClock version = 2;
+}
+
+// WebSocket message envelope
+message WSMessage {
+  // Message types
+  enum Type {
+    // Client → Server: Initial sync
+    SYNC_REQUEST = 0;
+    
+    // Server → Client: Sync response
+    SYNC_RESPONSE = 1;
+    
+    // Server → Client: Real-time notification
+    NOTIFICATION = 2;
+    
+    // Client → Server: Acknowledge notification
+    ACK = 3;
+    
+    // Both: Heartbeat ping
+    PING = 4;
+    
+    // Both: Heartbeat pong
+    PONG = 5;
+    
+    // Client → Server: Subscribe to documents
+    SUBSCRIBE = 6;
+    
+    // Client → Server: Unsubscribe from documents
+    UNSUBSCRIBE = 7;
+    
+    // Server → Client: Subscription confirmed
+    SUBSCRIBED = 8;
+    
+    // Server → Client: Connection error
+    ERROR = 9;
+  }
+  
+  Type type = 1;
+  
+  // Message payload (type-specific)
+  oneof payload {
+    SyncRequest sync_request = 2;
+    SyncResponse sync_response = 3;
+    SyncNotification notification = 4;
+    SyncAck ack = 5;
+    SubscribeRequest subscribe = 6;
+    UnsubscribeRequest unsubscribe = 7;
+    SubscriptionConfirm subscribed = 8;
+    ErrorMessage error = 9;
+  }
+  
+  // Message timestamp
+  Timestamp timestamp = 10;
+}
+
+// Client subscribes to real-time updates
+message SubscribeRequest {
+  // Documents to subscribe to
+  repeated DocumentID document_ids = 1;
+}
+
+// Client unsubscribes from updates
+message UnsubscribeRequest {
+  // Documents to unsubscribe from
+  repeated DocumentID document_ids = 1;
+}
+
+// Server confirms subscription
+message SubscriptionConfirm {
+  // Successfully subscribed documents
+  repeated DocumentID document_ids = 1;
+  
+  // Current versions of subscribed documents
+  map<string, VectorClock> versions = 2;
+}
+
+// Error message
+message ErrorMessage {
+  // Error status code
+  Status status = 1;
+  
+  // Human-readable error message
+  string message = 2;
+  
+  // Additional error details (optional)
+  map<string, string> details = 3;
+}
+
+// Heartbeat ping (keepalive)
+message Ping {
+  // Timestamp when ping sent
+  Timestamp sent_at = 1;
+}
+
+// Heartbeat pong (response)
+message Pong {
+  // Original ping timestamp
+  Timestamp ping_sent_at = 1;
+  
+  // Timestamp when pong sent
+  Timestamp pong_sent_at = 2;
+}

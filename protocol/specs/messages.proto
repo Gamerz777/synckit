@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package synckit.protocol;
+
+import "types.proto";
+
+// Field with metadata (Tier 1: LWW)
+message Field {
+  // Field path within document
+  FieldPath path = 1;
+  
+  // Current value (or tombstone if deleted)
+  oneof content {
+    Value value = 2;
+    Tombstone tombstone = 3;
+  }
+  
+  // Last-write timestamp for LWW resolution
+  Timestamp timestamp = 4;
+}
+
+// Complete document state
+message Document {
+  // Document identifier
+  DocumentID id = 1;
+  
+  // Current vector clock (causality)
+  VectorClock version = 2;
+  
+  // All fields in document with metadata
+  repeated Field fields = 3;
+  
+  // Document-level metadata
+  Timestamp created_at = 4;
+  Timestamp updated_at = 5;
+  ClientID created_by = 6;
+}
+
+// Delta representing changes between states
+message Delta {
+  // Document being changed
+  DocumentID document_id = 1;
+  
+  // Base version this delta applies to
+  VectorClock base_version = 2;
+  
+  // New version after applying delta
+  VectorClock new_version = 3;
+  
+  // Changed fields (only modified fields)
+  repeated Field changes = 4;
+  
+  // Client that generated this delta
+  ClientID client_id = 5;
+  
+  // Timestamp when delta was created
+  Timestamp created_at = 6;
+}
+
+// Checkpoint for resuming sync
+message SyncCheckpoint {
+  // Client's current vector clock
+  VectorClock version = 1;
+  
+  // Last sync timestamp
+  Timestamp last_sync = 2;
+  
+  // Documents synced (optional, for partial sync)
+  repeated DocumentID documents = 3;
+}
+
+// Text operation for CRDT text editing (Tier 2)
+message TextOperation {
+  // Operation type
+  enum OpType {
+    INSERT = 0;
+    DELETE = 1;
+  }
+  
+  OpType op_type = 1;
+  
+  // Position in text (character index)
+  int64 position = 2;
+  
+  // Content for insert operations
+  string content = 3;
+  
+  // Length for delete operations
+  int64 length = 4;
+  
+  // Unique operation ID (for YATA algorithm)
+  string op_id = 5;
+  
+  // Parent operation ID (causality)
+  string parent_id = 6;
+  
+  // Client that created operation
+  ClientID client_id = 7;
+  
+  // Timestamp
+  Timestamp timestamp = 8;
+}
+
+// Set operation for OR-Set CRDT (Tier 3)
+message SetOperation {
+  // Operation type
+  enum OpType {
+    ADD = 0;
+    REMOVE = 1;
+  }
+  
+  OpType op_type = 1;
+  
+  // Element value
+  Value element = 2;
+  
+  // Unique tag for this add operation
+  string tag = 3;
+  
+  // For remove: tags to remove
+  repeated string remove_tags = 4;
+}
+
+// Counter operation for PN-Counter CRDT (Tier 3)
+message CounterOperation {
+  // Operation type
+  enum OpType {
+    INCREMENT = 0;
+    DECREMENT = 1;
+  }
+  
+  OpType op_type = 1;
+  
+  // Amount to change
+  int64 amount = 2;
+  
+  // Client performing operation
+  ClientID client_id = 3;
+}
+
+// Generic CRDT operation wrapper (Tier 3)
+message CRDTOperation {
+  // Document and field this operation applies to
+  DocumentID document_id = 1;
+  FieldPath field_path = 2;
+  
+  // CRDT type
+  enum CRDTType {
+    LWW = 0;           // Last-Write-Wins (Tier 1)
+    TEXT = 1;          // Text CRDT (Tier 2)
+    OR_SET = 2;        // Observed-Remove Set
+    PN_COUNTER = 3;    // Positive-Negative Counter
+  }
+  
+  CRDTType crdt_type = 3;
+  
+  // Type-specific operation
+  oneof operation {
+    Field lww_field = 4;
+    TextOperation text_op = 5;
+    SetOperation set_op = 6;
+    CounterOperation counter_op = 7;
+  }
+  
+  // Metadata
+  VectorClock version = 8;
+  Timestamp timestamp = 9;
+}

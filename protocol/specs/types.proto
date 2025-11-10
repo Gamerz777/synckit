@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package synckit.protocol;
+
+// Unique identifier for a client/replica
+message ClientID {
+  // Unique client identifier (UUID format recommended)
+  string id = 1;
+}
+
+// Logical timestamp for causality tracking
+message Timestamp {
+  // Milliseconds since Unix epoch
+  int64 millis = 1;
+  
+  // Client ID for tie-breaking
+  ClientID client_id = 2;
+}
+
+// Vector clock for tracking causality between replicas
+message VectorClock {
+  // Map of client ID to logical clock value
+  // Key: client_id.id, Value: clock counter
+  map<string, int64> clocks = 1;
+}
+
+// Unique identifier for a document
+message DocumentID {
+  // Document identifier (application-specific)
+  string id = 1;
+}
+
+// Unique identifier for a field within a document
+message FieldPath {
+  // Dot-separated path (e.g., "user.profile.name")
+  // Or array of path segments for nested objects
+  repeated string segments = 1;
+}
+
+// Status codes for operations
+enum Status {
+  // Operation successful
+  OK = 0;
+  
+  // Invalid request parameters
+  INVALID_REQUEST = 1;
+  
+  // Document not found
+  NOT_FOUND = 2;
+  
+  // Permission denied
+  PERMISSION_DENIED = 3;
+  
+  // Conflict detected (requires manual resolution)
+  CONFLICT = 4;
+  
+  // Internal server error
+  INTERNAL_ERROR = 5;
+  
+  // Rate limit exceeded
+  RATE_LIMITED = 6;
+  
+  // Authentication required
+  UNAUTHENTICATED = 7;
+}
+
+// Generic value type for field values
+message Value {
+  oneof value {
+    // Null value
+    bool null = 1;
+    
+    // Boolean value
+    bool bool_value = 2;
+    
+    // Integer value
+    int64 int_value = 3;
+    
+    // Float value
+    double float_value = 4;
+    
+    // String value
+    string string_value = 5;
+    
+    // Binary data (base64 encoded)
+    bytes bytes_value = 6;
+    
+    // Array value (nested)
+    ValueArray array_value = 7;
+    
+    // Object value (nested)
+    ValueObject object_value = 8;
+  }
+}
+
+// Array of values
+message ValueArray {
+  repeated Value items = 1;
+}
+
+// Object (map) of values
+message ValueObject {
+  map<string, Value> fields = 1;
+}
+
+// Tombstone marker for deleted fields
+message Tombstone {
+  // Timestamp when field was deleted
+  Timestamp deleted_at = 1;
+}
