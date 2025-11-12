@@ -1,9 +1,24 @@
-//! CRDT data structures
+//! CRDT (Conflict-free Replicated Data Types) implementations
 //!
-//! Phase 3 implementation:
-//! - OR-Set (Observed-Remove Set)
-//! - PN-Counter (Positive-Negative Counter)
-//! - Fractional Index (for list ordering)
-//! - Text CRDT (YATA-based)
+//! This module contains various CRDT data structures for building collaborative
+//! applications without requiring coordination between replicas.
+//!
+//! # CRDTs Implemented
+//!
+//! - **PN-Counter:** Positive-Negative Counter for distributed counting
+//! - **OR-Set:** Observed-Remove Set for add/remove operations (TODO)
+//! - **Fractional Index:** Position-based list ordering (TODO)
+//! - **Text CRDT:** Block-based text editing (TODO)
+//!
+//! # References
+//!
+//! - "A comprehensive study of CRDTs" by Marc Shapiro et al.
+//! - "Conflict-free Replicated Data Types" (INRIA Research Report 7687)
 
-// Placeholder for Phase 3
+pub mod pn_counter;
+// TODO: Phase 3 - Implement remaining CRDTs
+// pub mod or_set;
+// pub mod fractional_index;
+// pub mod text;
+
+pub use pn_counter::PNCounter;
