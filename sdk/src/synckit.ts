@@ -16,7 +16,7 @@ export class SyncKit {
   private initialized = false
   private documents = new Map<string, SyncDocument<any>>()
   
-  constructor(private config: SyncKitConfig = {}) {
+  constructor(config: SyncKitConfig = {}) {
     // Generate client ID if not provided
     this.clientId = config.clientId ?? this.generateClientId()
     

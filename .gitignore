@@ -51,6 +51,9 @@ coverage/
 *.wasm
 *.js.map
 
+# Exception: Track WASM distribution files in SDK
+!sdk/wasm/*.wasm
+
 # Temporary files
 *.tmp
 *.temp

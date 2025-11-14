@@ -63,7 +63,7 @@ export class IndexedDBStorage implements StorageAdapter {
     })
   }
   
-  async set(docId: string, doc: StoredDocument): Promise<void> {
+  async set(_docId: string, doc: StoredDocument): Promise<void> {
     if (!this.db) {
       throw new StorageError('Storage not initialized')
     }

@@ -5,8 +5,6 @@
  */
 
 import type {
-  DocumentData,
-  FieldPath,
   SubscriptionCallback,
   Unsubscribe,
   StorageAdapter,

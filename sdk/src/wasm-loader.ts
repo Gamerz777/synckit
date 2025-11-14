@@ -70,21 +70,16 @@ export async function initWASM(): Promise<WASMModule> {
   // Start initialization
   initPromise = (async () => {
     try {
-      // Dynamic import of WASM module
-      // In production, this would import from ../core/pkg
-      // For now, we'll prepare the interface
+      // Dynamic import of WASM module from the wasm directory
+      const wasm = await import('../wasm/synckit_core.js')
       
-      // TODO: Replace with actual WASM import
-      // const wasm = await import('../../core/pkg/synckit_core.js')
-      // await wasm.default() // Initialize WASM
-      // wasm.init_panic_hook() // Better error messages
+      // Initialize WASM module
+      await wasm.default()
       
-      // Placeholder for development
-      throw new WASMError(
-        'WASM module not yet linked. Run build script to copy WASM files to SDK.'
-      )
+      // Install panic hook for better error messages
+      wasm.init_panic_hook()
       
-      // return wasm as WASMModule
+      return wasm as WASMModule
     } catch (error) {
       initPromise = null // Reset so retry is possible
       if (error instanceof WASMError) throw error

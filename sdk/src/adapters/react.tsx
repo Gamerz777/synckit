@@ -6,7 +6,6 @@
 import { useEffect, useState, useCallback, useRef, createContext, useContext } from 'react'
 import type { SyncKit } from '../synckit'
 import type { SyncDocument } from '../document'
-import type { SubscriptionCallback } from '../types'
 
 // ====================
 // Context
@@ -56,7 +55,7 @@ export interface UseSyncDocumentOptions {
  */
 export function useSyncDocument<T extends Record<string, unknown>>(
   id: string,
-  options: UseSyncDocumentOptions = {}
+  _options: UseSyncDocumentOptions = {}
 ): [T, {
   set: <K extends keyof T>(field: K, value: T[K]) => Promise<void>
   update: (updates: Partial<T>) => Promise<void>

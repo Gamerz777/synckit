@@ -3,6 +3,10 @@
  * @module storage
  */
 
+import { MemoryStorage } from './memory'
+import { IndexedDBStorage } from './indexeddb'
+import type { StorageAdapter } from '../types'
+
 export { MemoryStorage } from './memory'
 export { IndexedDBStorage } from './indexeddb'
 export type { StorageAdapter, StoredDocument } from '../types'
