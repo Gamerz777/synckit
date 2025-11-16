@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # SyncKit Server
+  synckit-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: synckit-server
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=8080
+      - DATABASE_URL=postgresql://synckit:synckit_password@postgres:5432/synckit
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-this-in-production-min-32-characters-long}
+      - JWT_EXPIRES_IN=24h
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - WS_MAX_CONNECTIONS=10000
+      - WS_HEARTBEAT_INTERVAL=30000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - synckit-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: synckit-postgres
+    environment:
+      - POSTGRES_DB=synckit
+      - POSTGRES_USER=synckit
+      - POSTGRES_PASSWORD=synckit_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./src/storage/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - synckit-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synckit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: synckit-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - synckit-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # pgAdmin (optional - for database management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: synckit-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@synckit.local
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - synckit-network
+    profiles:
+      - dev
+
+  # Redis Commander (optional - for Redis management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: synckit-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - synckit-network
+    profiles:
+      - dev
+
+networks:
+  synckit-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
