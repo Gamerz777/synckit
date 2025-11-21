@@ -6,6 +6,7 @@
 export function init_panic_hook(): void;
 /**
  * JavaScript-friendly wrapper for DocumentDelta
+ * Only available when protocol support is enabled (core variant, not core-lite)
  */
 export class WasmDelta {
   private constructor();

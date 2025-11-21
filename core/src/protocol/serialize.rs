@@ -3,13 +3,20 @@
 //! This module provides conversion between our internal CRDT types
 //! and the Protocol Buffer message format for network transmission.
 
-use crate::crdt::{PNCounter, ORSet};
 use crate::protocol::*;
 use crate::error::{SyncError, Result};
 use prost::Message;
 use bytes::{Bytes, BytesMut};
 
+// Import CRDTs only if their features are enabled
+#[cfg(feature = "counters")]
+use crate::crdt::PNCounter;
+
+#[cfg(feature = "sets")]
+use crate::crdt::ORSet;
+
 /// Serialize a PN-Counter to protocol format
+#[cfg(feature = "counters")]
 pub fn serialize_pn_counter(counter: &PNCounter, client_id: &str) -> CounterOperation {
     // Get the current value
     let value = counter.value();
@@ -28,6 +35,7 @@ pub fn serialize_pn_counter(counter: &PNCounter, client_id: &str) -> CounterOper
 }
 
 /// Deserialize a PN-Counter from protocol format
+#[cfg(feature = "counters")]
 pub fn deserialize_pn_counter(op: &CounterOperation, client_id: &str) -> Result<PNCounter> {
     let mut counter = PNCounter::new(client_id.to_string());
     
@@ -49,6 +57,7 @@ pub fn deserialize_pn_counter(op: &CounterOperation, client_id: &str) -> Result<
 }
 
 /// Serialize an OR-Set to protocol format
+#[cfg(feature = "sets")]
 pub fn serialize_or_set<T>(set: &ORSet<T>, _client_id: &str) -> Vec<SetOperation>
 where
     T: serde::Serialize + Clone + Eq + std::hash::Hash,
@@ -71,6 +80,7 @@ where
 }
 
 /// Deserialize an OR-Set from protocol format
+#[cfg(feature = "sets")]
 pub fn deserialize_or_set<T>(operations: &[SetOperation], client_id: &str) -> Result<ORSet<T>>
 where
     T: serde::de::DeserializeOwned + Eq + std::hash::Hash + Clone + serde::Serialize,
@@ -213,21 +223,23 @@ mod tests {
     }
     
     #[test]
+    #[cfg(feature = "counters")]
     fn test_pn_counter_serialization() {
         let mut counter = PNCounter::new("client1".to_string());
         counter.increment(5);
         counter.decrement(2);
-        
+
         let op = serialize_pn_counter(&counter, "client1");
         assert_eq!(op.amount, 3);
     }
-    
+
     #[test]
+    #[cfg(feature = "sets")]
     fn test_or_set_serialization() {
         let mut set = ORSet::new("client1".to_string());
         set.add("item1".to_string());
         set.add("item2".to_string());
-        
+
         let ops = serialize_or_set(&set, "client1");
         assert_eq!(ops.len(), 2);
     }

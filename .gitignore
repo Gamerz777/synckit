@@ -2,6 +2,7 @@
 target/
 *.rs.bk
 *.pdb
+*.backup
 
 # Cargo.lock strategy:
 # - Ignore for libraries (core/, sdk/) - users will use their own versions
@@ -13,6 +14,7 @@ Cargo.lock
 # WASM
 pkg/
 pkg-nodejs/
+pkg-*/
 wasm-pack.log
 
 # Node/TypeScript
@@ -88,6 +90,7 @@ DIRECTORY_TREE.txt
 *_INTERNAL.md
 *_PLAN.md
 .notes/
+analysis/
 
 # Test environment
 tests/bun.lock

@@ -7,20 +7,27 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
+    },
+    "./lite": {
+      "types": "./dist/index-lite.d.ts",
+      "import": "./dist/index-lite.mjs",
+      "require": "./dist/index-lite.js"
     },
     "./react": {
+      "types": "./dist/react.d.ts",
       "import": "./dist/react.mjs",
-      "require": "./dist/react.js",
-      "types": "./dist/react.d.ts"
+      "require": "./dist/react.js"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/adapters/react.tsx --format cjs,esm --dts --clean && npm run copy-wasm",
-    "copy-wasm": "node -e \"require('fs').copyFileSync('wasm/synckit_core_bg.wasm', 'dist/synckit_core_bg.wasm')\"",
-    "dev": "tsup src/index.ts src/adapters/react.tsx --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts src/index-lite.ts src/adapters/react.tsx --format cjs,esm --dts --clean && npm run copy-wasm",
+    "copy-wasm": "npm run copy-wasm-variants && npm run copy-wasm-to-dist",
+    "copy-wasm-variants": "node scripts/copy-wasm-variants.js",
+    "copy-wasm-to-dist": "node scripts/copy-wasm-to-dist.js",
+    "dev": "tsup src/index.ts src/index-lite.ts src/adapters/react.tsx --format cjs,esm --dts --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "tsc --noEmit",
@@ -40,7 +47,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/synckit.git",
+    "url": "https://github.com/Dancode-188/synckit.git",
     "directory": "sdk"
   },
   "files": [

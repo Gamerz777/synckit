@@ -22,6 +22,38 @@ Production-ready WebSocket server for real-time synchronization with SyncKit.
 
 ---
 
+## ⚠️ Security Warning: Demo Authentication
+
+**This reference server uses simplified demo authentication for development and testing purposes.**
+
+The current authentication implementation (`src/routes/auth.ts`) accepts **any email/password combination** for demonstration purposes. This is **NOT suitable for production use**.
+
+### Before Production Deployment:
+
+1. **Replace Demo Auth** - Implement proper authentication:
+   - Password hashing (bcrypt, argon2)
+   - User database with secure credentials
+   - Account verification and password reset
+   - Rate limiting and brute force protection
+
+2. **Set Strong JWT Secret** - The demo uses a development secret:
+   ```bash
+   # In production, use a strong random secret (min 32 characters)
+   JWT_SECRET=your-production-secret-min-32-chars-long
+   ```
+
+3. **Additional Security** - Production checklist:
+   - Enable HTTPS/TLS
+   - Configure CORS properly
+   - Set secure cookie flags
+   - Implement session management
+   - Add audit logging
+   - Enable rate limiting
+
+**For Production:** See [DEPLOYMENT.md](DEPLOYMENT.md) for complete security hardening guide.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites

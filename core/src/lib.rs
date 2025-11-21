@@ -5,7 +5,7 @@
 //! - Document structure with field-level LWW
 //! - Vector clocks for causality tracking
 //! - CRDT data structures (OR-Set, PN-Counter, Text)
-//! - Binary protocol encoding/decoding
+//! - Binary protocol encoding/decoding (when prost feature enabled)
 //!
 //! # Examples
 //!
@@ -21,12 +21,28 @@
 //! );
 //! ```
 
+// Use wee_alloc when building for WASM with core-lite feature (size optimization)
+#[cfg(all(target_arch = "wasm32", feature = "wee_alloc"))]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 pub mod document;
 pub mod sync;
-pub mod crdt;
-pub mod protocol;
 pub mod storage;
 pub mod error;
+
+// Protocol module only included if prost feature is enabled
+#[cfg(feature = "prost")]
+pub mod protocol;
+
+// CRDTs are feature-gated (only compile if needed)
+#[cfg(any(
+    feature = "text-crdt",
+    feature = "counters",
+    feature = "sets",
+    feature = "fractional-index"
+))]
+pub mod crdt;
 
 #[cfg(feature = "wasm")]
 pub mod wasm;

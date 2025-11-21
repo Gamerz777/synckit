@@ -1,288 +1,548 @@
 # Contributing to SyncKit
 
-First off, thank you for considering contributing to SyncKit! 🎉
+Thank you for your interest in contributing to SyncKit! 🎉
 
-SyncKit is an open source project and we love to receive contributions from the community. There are many ways to contribute, from writing code to improving documentation, reporting bugs, or suggesting new features.
-
----
-
-## 📋 Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [How Can I Contribute?](#how-can-i-contribute)
-- [Development Setup](#development-setup)
-- [Project Structure](#project-structure)
-- [Pull Request Process](#pull-request-process)
-- [Coding Standards](#coding-standards)
-- [Commit Message Guidelines](#commit-message-guidelines)
+We welcome contributions from everyone, whether you're fixing a typo, adding a feature, or improving documentation.
 
 ---
 
-## 📜 Code of Conduct
+## Table of Contents
 
-This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
-
----
-
-## 🤝 How Can I Contribute?
-
-### Reporting Bugs
-
-Before creating bug reports, please check existing issues to avoid duplicates. When creating a bug report, include:
-
-- **Clear title and description**
-- **Steps to reproduce** the behavior
-- **Expected behavior** vs actual behavior
-- **Screenshots** if applicable
-- **Environment details** (OS, browser, versions)
-- **Additional context** or logs
-
-### Suggesting Features
-
-Feature requests are welcome! Please:
-
-- **Check existing issues** for similar requests
-- **Describe the use case** clearly
-- **Explain why** this feature would be useful
-- **Provide examples** if possible
-
-### Contributing Code
-
-1. **Fork the repository** and create your branch from `main`
-2. **Make your changes** following our coding standards
-3. **Add tests** for any new functionality
-4. **Ensure all tests pass**
-5. **Update documentation** as needed
-6. **Submit a pull request**
-
-### Improving Documentation
-
-Documentation improvements are always appreciated:
-
-- Fix typos or clarify existing docs
-- Add missing examples or use cases
-- Improve API documentation
-- Write tutorials or guides
+1. [Code of Conduct](#code-of-conduct)
+2. [Ways to Contribute](#ways-to-contribute)
+3. [Getting Started](#getting-started)
+4. [Development Workflow](#development-workflow)
+5. [Submitting Changes](#submitting-changes)
+6. [Style Guidelines](#style-guidelines)
+7. [Community & Recognition](#community--recognition)
 
 ---
 
-## 🛠️ Development Setup
+## Code of Conduct
+
+**Be respectful, be kind, be collaborative.**
+
+We're committed to providing a welcoming and inclusive environment. By participating, you agree to:
+
+- Use welcoming and inclusive language
+- Be respectful of differing viewpoints and experiences
+- Accept constructive criticism gracefully
+- Focus on what's best for the community
+- Show empathy towards other community members
+
+**Unacceptable behavior includes:**
+- Harassment, trolling, or personal attacks
+- Publishing others' private information
+- Spam or off-topic discussions
+- Any conduct that would be inappropriate in a professional setting
+
+**Enforcement:** Violations will result in a warning, temporary ban, or permanent ban depending on severity.
+
+---
+
+## Ways to Contribute
+
+### 🐛 Bug Reports
+
+Found a bug? Help us fix it!
+
+**Before submitting:**
+1. Check [existing issues](https://github.com/Dancode-188/synckit/issues) to avoid duplicates
+2. Try to reproduce on latest version
+3. Gather details (error message, browser/Node version, minimal repro)
+
+**Submit a bug report:**
+1. Go to [Issues](https://github.com/Dancode-188/synckit/issues/new)
+2. Select "Bug Report" template
+3. Fill in all sections
+4. Add label: `bug`
+
+**What makes a good bug report:**
+- Clear, specific title
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (OS, browser, Node version)
+- Error messages / stack traces
+- Minimal code example
+
+### ✨ Feature Requests
+
+Have an idea? We'd love to hear it!
+
+**Before requesting:**
+1. Check [roadmap](ROADMAP.md) and [existing issues](https://github.com/Dancode-188/synckit/issues?q=is%3Aissue+label%3Aenhancement)
+2. Consider if it fits SyncKit's philosophy (simple, fast, offline-first)
+3. Think about backward compatibility
+
+**Submit a feature request:**
+1. Go to [Issues](https://github.com/Dancode-188/synckit/issues/new)
+2. Select "Feature Request" template
+3. Explain use case and motivation
+4. Add label: `enhancement`
+
+### 📚 Documentation
+
+Documentation improvements are always welcome!
+
+**Types of contributions:**
+- Fix typos or grammar
+- Clarify confusing sections
+- Add examples or diagrams
+- Translate docs (coming soon)
+- Improve code comments
+
+**How to contribute:**
+- Small changes: Edit directly on GitHub (click "Edit this file")
+- Larger changes: Follow [development workflow](#development-workflow)
+
+### 🧪 Tests
+
+Help us improve test coverage!
+
+**Areas needing tests:**
+- Edge cases in conflict resolution
+- Network failure scenarios
+- Cross-browser compatibility
+- Performance benchmarks
+
+**See:** [Testing Guide](docs/guides/testing.md)
+
+### 🌐 Multi-Language Servers
+
+We need server implementations in Python, Go, and Rust!
+
+**Requirements:**
+- WebSocket support for real-time sync
+- JWT authentication
+- Database integration (PostgreSQL or MongoDB)
+- Match TypeScript server behavior
+
+**See:** [Server Architecture](docs/architecture/ARCHITECTURE.md)
+
+### 💡 Code Contributions
+
+Ready to write code? Awesome!
+
+**Good first issues:**
+- Look for [`good-first-issue`](https://github.com/Dancode-188/synckit/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label
+- Start with documentation or tests
+- Fix bugs before adding features
+
+**How to contribute:**
+1. Find or create an issue
+2. Comment "I'd like to work on this"
+3. Wait for confirmation (avoid duplicate work)
+4. Follow [development workflow](#development-workflow)
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- **Rust** 1.70+ and Cargo
-- **Node.js** 18+ or **Bun** 1.0+
-- **Git** for version control
-- **PostgreSQL** (optional, for server development)
+**Required:**
+- Node.js 18+ or Bun 1.0+
+- Rust 1.70+ (for core development)
+- Git
 
-### Getting Started
+**Recommended:**
+- VS Code with Rust Analyzer extension
+- PostgreSQL (for server development)
+
+### Setup Instructions
 
 ```bash
-# Clone your fork
+# 1. Fork the repository on GitHub
+#    Click "Fork" button on https://github.com/Dancode-188/synckit
+
+# 2. Clone your fork
 git clone https://github.com/YOUR_USERNAME/synckit.git
 cd synckit
 
-# Install dependencies
-# (Will be automated with setup script in Phase 1)
+# 3. Add upstream remote
+git remote add upstream https://github.com/Dancode-188/synckit.git
 
-# Build Rust core
+# 4. Install dependencies
+npm install
+# or
+bun install
+
+# 5. Build the core (WASM)
 cd core
-cargo build
+cargo build --target wasm32-unknown-unknown
+wasm-pack build --target web
+cd ..
 
-# Build TypeScript SDK
-cd ../sdk
+# 6. Build the SDK
+cd sdk
 npm install
 npm run build
+cd ..
 
-# Run tests
-cargo test          # Rust tests
-npm test            # TypeScript tests
+# 7. Build the server
+cd server/typescript
+bun install
+cd ../..
+
+# 8. Run tests
+npm test
+```
+
+### Verify Setup
+
+```bash
+# All tests should pass
+npm test
+
+# Core tests
+cd core && cargo test
+
+# SDK tests
+cd sdk && npm test
+
+# Server tests
+cd server/typescript && bun test
+```
+
+### Finding Issues to Work On
+
+**Start here:**
+1. [`good-first-issue`](https://github.com/Dancode-188/synckit/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) - Beginner-friendly
+2. [`help-wanted`](https://github.com/Dancode-188/synckit/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) - We need help!
+3. [`documentation`](https://github.com/Dancode-188/synckit/issues?q=is%3Aissue+is%3Aopen+label%3Adocumentation) - Doc improvements
+4. [`bug`](https://github.com/Dancode-188/synckit/issues?q=is%3Aissue+is%3Aopen+label%3Abug) - Bug fixes
+
+**Comment on the issue** before starting work to avoid duplication!
+
+---
+
+## Development Workflow
+
+### Branch Naming
+
+Use descriptive branch names:
+
+```bash
+# Features
+feature/add-vue-adapter
+feature/sqlite-storage
+
+# Bug fixes
+fix/conflict-resolution-edge-case
+fix/memory-leak-in-subscription
+
+# Documentation
+docs/improve-getting-started
+docs/add-testing-examples
+
+# Tests
+test/add-chaos-tests
+test/improve-property-tests
+```
+
+### Development Process
+
+```bash
+# 1. Sync with upstream
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+# 2. Create feature branch
+git checkout -b feature/your-feature-name
+
+# 3. Make changes
+# Edit files, write tests, update docs
+
+# 4. Run tests
+npm test
+
+# 5. Run linter
+npm run lint
+
+# 6. Commit changes (see commit conventions below)
+git add .
+git commit -m "feat: add Vue adapter"
+
+# 7. Push to your fork
+git push origin feature/your-feature-name
+
+# 8. Open pull request on GitHub
+```
+
+### Commit Conventions
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```bash
+# Format
+<type>(<scope>): <subject>
+
+# Types
+feat:     New feature
+fix:      Bug fix
+docs:     Documentation only
+style:    Code style (formatting, semicolons, etc.)
+refactor: Code refactoring (no functional changes)
+perf:     Performance improvement
+test:     Add or update tests
+chore:    Maintenance (dependencies, build, etc.)
+
+# Examples
+feat(sdk): add Vue composables
+fix(core): resolve conflict resolution edge case
+docs(guides): improve offline-first guide
+test(sdk): add property-based tests for convergence
+perf(wasm): optimize delta computation
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test suite
+cd core && cargo test        # Rust tests
+cd sdk && npm test           # SDK tests
+cd server/typescript && bun test  # Server tests
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Code Quality
+
+```bash
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+
+# Type check
+npm run type-check
+
+# Run all checks
+npm run check
 ```
 
 ---
 
-## 🏗️ Project Structure
+## Submitting Changes
 
-See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed information about the codebase organization.
+### Pull Request Process
 
-**Key directories:**
-- `core/` - Rust sync engine (WASM + native)
-- `sdk/` - TypeScript SDK
-- `server/` - Multi-language server implementations
-- `protocol/` - Protocol specifications
-- `docs/` - Documentation
-- `examples/` - Example applications
-- `tests/` - Integration and performance tests
+1. **Ensure all tests pass** - `npm test`
+2. **Update documentation** - If changing APIs
+3. **Add tests** - For new features or bug fixes
+4. **Run linter** - `npm run lint`
+5. **Write clear PR description** - What, why, how
 
----
+### Pull Request Template
 
-## 🔄 Pull Request Process
+```markdown
+## Description
+Brief description of changes
 
-### Before Submitting
+## Motivation
+Why is this change needed?
 
-1. **Update documentation** for any changed functionality
-2. **Add tests** to cover your changes
-3. **Run the full test suite** and ensure all tests pass
-4. **Update ROADMAP.md** if adding major features
-5. **Follow the coding standards** below
+## Changes
+- Added X
+- Fixed Y
+- Updated Z
 
-### PR Checklist
+## Testing
+How did you test this?
 
-- [ ] Code follows project style guidelines
-- [ ] Self-review completed
-- [ ] Comments added for complex logic
-- [ ] Documentation updated
-- [ ] Tests added/updated
-- [ ] All tests passing
-- [ ] No merge conflicts
+## Screenshots (if applicable)
+Add screenshots for UI changes
+
+## Checklist
+- [ ] Tests pass locally
+- [ ] Added/updated tests
+- [ ] Updated documentation
+- [ ] Followed code style
+- [ ] PR title follows conventions
+```
 
 ### Review Process
 
-- Maintainers will review your PR within 48-72 hours
-- Address any feedback or requested changes
-- Once approved, a maintainer will merge your PR
+**Timeline:**
+- Initial feedback: Within 48 hours
+- Full review: Within 1 week
+- Merge: After approval + CI passes
+
+**What we look for:**
+- ✅ Code quality and readability
+- ✅ Test coverage
+- ✅ Documentation updates
+- ✅ Backward compatibility
+- ✅ Performance impact
+
+**If changes requested:**
+1. Make requested changes
+2. Push to same branch
+3. Reply to review comments
+4. Re-request review
 
 ---
 
-## 💻 Coding Standards
+## Style Guidelines
 
-### Rust (core/)
-
-- Follow [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
-- Use `rustfmt` for formatting: `cargo fmt`
-- Use `clippy` for linting: `cargo clippy`
-- Add doc comments (`///`) for public APIs
-- Write unit tests alongside code
-
-```rust
-/// Merges two documents using Last-Write-Wins strategy.
-///
-/// # Arguments
-/// * `local` - The local document state
-/// * `remote` - The remote document state
-///
-/// # Returns
-/// The merged document state
-pub fn merge(local: &Document, remote: &Document) -> Document {
-    // Implementation
-}
-```
-
-### TypeScript (sdk/)
-
-- Follow [TypeScript best practices](https://www.typescriptlang.org/)
-- Use Prettier for formatting (config in `.prettierrc`)
-- Use ESLint for linting (config in `.eslintrc`)
-- Use JSDoc comments for exported functions
-- Prefer functional programming patterns
+### TypeScript Style
 
 ```typescript
-/**
- * Creates a new synchronized document.
- *
- * @param id - Unique document identifier
- * @param options - Configuration options
- * @returns SyncDocument instance
- *
- * @example
- * ```ts
- * const doc = sync.document<Todo>('todo-123')
- * await doc.update({ completed: true })
- * ```
- */
-export function document<T>(id: string, options?: DocumentOptions): SyncDocument<T> {
-  // Implementation
+// ✅ Good
+export async function updateDocument<T>(
+  id: string,
+  updates: Partial<T>
+): Promise<void> {
+  const doc = sync.document<T>(id)
+  await doc.update(updates)
+}
+
+// ❌ Bad
+export async function updateDocument(id, updates) {
+  var doc = sync.document(id)
+  await doc.update(updates)
 }
 ```
 
-### Testing Standards
+**Rules:**
+- Use `const` and `let`, never `var`
+- Explicit types for function parameters and returns
+- Use async/await over promises
+- Use arrow functions for callbacks
+- Use template literals for strings
 
-- **Unit tests** for individual functions/modules
-- **Integration tests** for cross-component functionality
-- **Property-based tests** for CRDT operations
-- **Performance benchmarks** for critical paths
+### Rust Style
 
-Aim for >80% code coverage.
+```rust
+// ✅ Good
+pub fn merge_documents(
+    local: &Document,
+    remote: &Document,
+) -> Result<Document, MergeError> {
+    let merged = Document::new();
+    // ...
+    Ok(merged)
+}
+
+// ❌ Bad
+pub fn merge_documents(local: &Document, remote: &Document) -> Document {
+    let mut merged = Document::new();
+    // ...
+    merged
+}
+```
+
+**Rules:**
+- Follow `rustfmt` defaults
+- Use `Result<T, E>` for errors
+- Document public APIs with `///`
+- Keep functions small (<50 lines)
+
+### Documentation Style
+
+```markdown
+<!-- ✅ Good -->
+## Quick Start
+
+Install SyncKit:
+
+\`\`\`bash
+npm install @synckit/sdk
+\`\`\`
+
+Initialize in your app:
+
+\`\`\`typescript
+const sync = new SyncKit()
+const doc = sync.document<Todo>('todo-1')
+\`\`\`
+
+<!-- ❌ Bad -->
+## quick start
+
+install it
+npm install @synckit/sdk
+
+then use it
+const sync = new SyncKit()
+```
+
+**Rules:**
+- Use proper markdown formatting
+- Include code examples
+- Use headers for structure
+- Keep paragraphs short (<4 lines)
 
 ---
 
-## 📝 Commit Message Guidelines
+## Community & Recognition
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/) for clear git history:
+### Getting Help
 
-```
-<type>(<scope>): <subject>
+**Stuck?** We're here to help!
 
-<body>
+- **[Discord](#)** - Real-time chat *(coming soon)*
+- **[GitHub Discussions](https://github.com/Dancode-188/synckit/discussions)** - Q&A
+- **[Issues](https://github.com/Dancode-188/synckit/issues)** - Bug reports and features
 
-<footer>
-```
+**Mentorship:**
+- First-time contributors get extra support
+- Tag issues with `good-first-issue` for guidance
+- Ask questions in issue comments
 
-### Types
+### Recognition
 
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding/updating tests
-- `chore:` - Maintenance tasks
-- `perf:` - Performance improvements
+**Contributors are recognized:**
+- ✅ Listed in AUTHORS file
+- ✅ Mentioned in release notes
+- ✅ Thanked in project README
+- ✅ Special badge on Discord *(coming soon)*
 
-### Examples
+**Top contributors:**
+- Featured on project homepage
+- Invited to contributor calls
+- Early access to new features
 
-```
-feat(core): implement LWW merge algorithm
+### Community Calls
 
-- Add vector clock implementation
-- Add field-level conflict resolution
-- Add delta computation
+**Monthly contributor calls:**
+- First Wednesday of each month
+- Review progress, discuss roadmap
+- Q&A with maintainers
 
-Closes #42
-```
-
-```
-fix(sdk): resolve offline queue race condition
-
-The offline queue was not properly handling concurrent
-operations during network transitions.
-
-Fixes #128
-```
-
-```
-docs(api): add examples for sync.text() API
-
-Added comprehensive examples showing:
-- Basic text insertion
-- Collaborative editing
-- Rich text formatting
-```
+**Details:** Announced in Discord *(coming soon)*
 
 ---
 
-## 🎯 Development Phases
+## Questions?
 
-We're following a 10-phase development roadmap (see [ROADMAP.md](ROADMAP.md)):
+**Still have questions?** Reach out:
 
-- **Phase 1-3**: Core engine and protocol (in progress)
-- **Phase 4-6**: SDK and WASM compilation
-- **Phase 7**: Server implementation
-- **Phase 8-10**: Testing, documentation, launch
-
-Check the roadmap to see what's currently in development and where help is needed.
+- 💬 [Discord Community](#) *(coming soon)*
+- 📧 [Email](mailto:danbitengo@gmail.com)
+- 🐛 [Open an Issue](https://github.com/Dancode-188/synckit/issues)
 
 ---
 
-## ❓ Questions?
+## License
 
-- **Technical questions**: Open a GitHub Discussion
-- **Bug reports**: Open a GitHub Issue
-- **Feature requests**: Open a GitHub Issue with `[Feature]` prefix
-- **Security issues**: Email security@synckit.dev (DO NOT open public issues)
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-## 🙏 Thank You!
+<div align="center">
 
-Your contributions make SyncKit better for everyone. We appreciate your time and effort! ❤️
+**Thank you for contributing to SyncKit! 🎉**
+
+[View Issues](https://github.com/Dancode-188/synckit/issues) • [View Pull Requests](https://github.com/Dancode-188/synckit/pulls) • [Back to README](README.md)
+
+</div>

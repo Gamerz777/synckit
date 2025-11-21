@@ -1,7 +1,7 @@
 /**
- * WASM Module Loader
- * Handles initialization and caching of the SyncKit WASM module
- * @module wasm-loader
+ * WASM Module Loader - Lite Variant
+ * Handles initialization and caching of the SyncKit WASM module (Lite variant)
+ * @module wasm-loader-lite
  */
 
 import { WASMError } from './types'
@@ -13,9 +13,6 @@ export interface WASMModule {
   }
   WasmVectorClock: {
     new (): WasmVectorClock
-  }
-  WasmDelta: {
-    compute(from: WasmDocument, to: WasmDocument): WasmDelta
   }
   init_panic_hook(): void
 }
@@ -40,20 +37,12 @@ export interface WasmVectorClock {
   free(): void
 }
 
-export interface WasmDelta {
-  applyTo(document: WasmDocument, clientId: string): void
-  getDocumentId(): string
-  changeCount(): number
-  toJSON(): string
-  free(): void
-}
-
 // Singleton WASM instance
 let wasmModule: WASMModule | null = null
 let initPromise: Promise<WASMModule> | null = null
 
 /**
- * Initialize the WASM module
+ * Initialize the WASM module (Lite variant)
  * Uses singleton pattern - subsequent calls return cached instance
  */
 export async function initWASM(): Promise<WASMModule> {
@@ -61,24 +50,24 @@ export async function initWASM(): Promise<WASMModule> {
   if (wasmModule) {
     return wasmModule
   }
-  
+
   // Return in-flight promise if initialization in progress
   if (initPromise) {
     return initPromise
   }
-  
+
   // Start initialization
   initPromise = (async () => {
     try {
-      // Dynamic import of WASM module from the default variant directory
-      const wasm = await import('../wasm/default/synckit_core.js')
-      
+      // Dynamic import of WASM module from the lite variant directory
+      const wasm = await import('../wasm/lite/synckit_core.js')
+
       // Initialize WASM module
       await wasm.default()
-      
+
       // Install panic hook for better error messages
       wasm.init_panic_hook()
-      
+
       return wasm as WASMModule
     } catch (error) {
       initPromise = null // Reset so retry is possible
@@ -86,7 +75,7 @@ export async function initWASM(): Promise<WASMModule> {
       throw new WASMError(`Failed to initialize WASM: ${error}`)
     }
   })()
-  
+
   wasmModule = await initPromise
   return wasmModule
 }

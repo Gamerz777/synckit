@@ -3,6 +3,9 @@
 use wasm_bindgen::prelude::*;
 use crate::document::Document;
 use crate::sync::VectorClock;
+
+// DocumentDelta is only available with protocol support
+#[cfg(feature = "prost")]
 use crate::protocol::delta::DocumentDelta;
 
 /// JavaScript-friendly wrapper for Document
@@ -123,11 +126,14 @@ impl WasmVectorClock {
 }
 
 /// JavaScript-friendly wrapper for DocumentDelta
+/// Only available when protocol support is enabled (core variant, not core-lite)
+#[cfg(feature = "prost")]
 #[wasm_bindgen]
 pub struct WasmDelta {
     inner: DocumentDelta,
 }
 
+#[cfg(feature = "prost")]
 #[wasm_bindgen]
 impl WasmDelta {
     /// Compute delta between two documents
@@ -137,26 +143,26 @@ impl WasmDelta {
             .map(|delta| WasmDelta { inner: delta })
             .map_err(|e| JsValue::from_str(&format!("Delta computation failed: {}", e)))
     }
-    
+
     /// Apply delta to a document
     #[wasm_bindgen(js_name = applyTo)]
     pub fn apply_to(&self, document: &mut WasmDocument, client_id: String) -> Result<(), JsValue> {
         self.inner.apply_to(&mut document.inner, &client_id)
             .map_err(|e| JsValue::from_str(&format!("Delta application failed: {}", e)))
     }
-    
+
     /// Get document ID this delta applies to
     #[wasm_bindgen(js_name = getDocumentId)]
     pub fn get_document_id(&self) -> String {
         self.inner.document_id.clone()
     }
-    
+
     /// Get number of changes in this delta
     #[wasm_bindgen(js_name = changeCount)]
     pub fn change_count(&self) -> usize {
         self.inner.changes.len()
     }
-    
+
     /// Export as JSON string
     #[wasm_bindgen(js_name = toJSON)]
     pub fn to_json(&self) -> Result<String, JsValue> {

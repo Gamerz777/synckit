@@ -64,22 +64,42 @@ export function useSyncDocument<T extends Record<string, unknown>>(
   const synckit = useSyncKit()
   const [data, setData] = useState<T>({} as T)
   const docRef = useRef<SyncDocument<T> | null>(null)
-  
+  const [initialized, setInitialized] = useState(false)
+
   // Get or create document
   if (!docRef.current) {
     docRef.current = synckit.document<T>(id)
   }
-  
+
   const doc = docRef.current
-  
-  // Subscribe to changes
+
+  // Initialize document
   useEffect(() => {
+    let cancelled = false
+
+    doc.init().then(() => {
+      if (!cancelled) {
+        setInitialized(true)
+      }
+    }).catch((error) => {
+      console.error('Failed to initialize document:', error)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [doc])
+
+  // Subscribe to changes (only after initialization)
+  useEffect(() => {
+    if (!initialized) return
+
     const unsubscribe = doc.subscribe((newData) => {
       setData(newData)
     })
-    
+
     return unsubscribe
-  }, [doc])
+  }, [doc, initialized])
   
   // Memoized setters
   const set = useCallback(

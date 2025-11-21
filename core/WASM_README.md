@@ -110,10 +110,9 @@ Optional optimization strategies for those who need smaller bundles:
    wasm-snip pkg/synckit_core_bg.wasm -o pkg/synckit_core_bg.wasm
    ```
 
-3. **Tiered builds** (planned for v0.2.0):
-   - `synckit-lite`: LWW + Vector Clock only (~18KB)
-   - `synckit-core`: + Counter + Set (~30KB)
-   - `synckit-full`: All CRDTs including Text (~51KB)
+3. **Tiered builds** (available in v0.1.0):
+   - `synckit-lite`: LWW + Vector Clock only (44KB gzipped)
+   - `synckit-default`: All features including Text CRDT, Counters, Sets, network protocol (49KB gzipped)
 
 **Note**: Most users prefer full functionality over minimal size. We optimize for features first, then size.
 

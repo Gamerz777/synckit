@@ -13,29 +13,35 @@ categories = ["wasm", "data-structures", "network-programming"]
 crate-type = ["cdylib", "rlib"]  # WASM + native library
 
 [dependencies]
-# Serialization
+# Serialization (always needed)
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-prost = "0.12"           # Protocol Buffers
-bytes = "1.5"            # Efficient byte buffers
-base64 = "0.22"          # Base64 encoding
+thiserror = "1.0"
 
-# WASM support (for Phase 5)
+# Optional: Protocol Buffers (only for full core with network support)
+prost = { version = "0.12", optional = true }
+bytes = { version = "1.5", optional = true }
+base64 = { version = "0.22", optional = true }
+
+# WASM support
 wasm-bindgen = { version = "=0.2.105", optional = true }
 web-sys = { version = "0.3", optional = true }
 js-sys = { version = "0.3", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 
-# Utilities
-uuid = { version = "1.0", features = ["v4", "serde", "js"] }
-chrono = { version = "0.4", features = ["serde", "wasmbind"] }
+# Optional: DateTime library (only for full core)
+chrono = { version = "0.4", features = ["serde", "wasmbind"], optional = true }
 
-# Error handling
-thiserror = "1.0"
+# Optional: Smaller allocator for WASM size optimization
+wee_alloc = { version = "0.4.5", optional = true }
+
+# Utilities (always needed)
+uuid = { version = "1.0", features = ["v4", "serde", "js"] }
 
 [build-dependencies]
-prost-build = "0.12"            # Protobuf code generation
-protoc-bin-vendored = "3.0"     # Bundled protoc compiler
+# Optional: Protobuf code generation (only when prost feature enabled)
+prost-build = { version = "0.12", optional = true }
+protoc-bin-vendored = { version = "3.0", optional = true }
 
 [dev-dependencies]
 # Testing
@@ -43,8 +49,29 @@ criterion = "0.5"        # Benchmarking
 proptest = "1.0"         # Property-based testing
 
 [features]
-default = []
+# Default: core-lite for minimal bundle size
+default = ["core-lite"]
+
+# Core variants
+core-lite = ["wee_alloc"]              # Minimal: LWW + Vector Clock (~22-25KB target)
+core = ["prost", "bytes", "base64", "chrono", "prost-build", "protoc-bin-vendored"]  # Full: + Protocol + DateTime (~40-45KB)
+
+# Individual CRDTs (opt-in, require core)
+text-crdt = ["core"]
+counters = ["core"]
+sets = ["core"]
+fractional-index = ["core"]
+
+# Convenience bundles
+text = ["core", "text-crdt"]
+advanced = ["core", "counters", "sets", "fractional-index"]
+full = ["core", "text-crdt", "counters", "sets", "fractional-index"]
+
+# WASM support (orthogonal to features)
 wasm = ["wasm-bindgen", "web-sys", "js-sys", "console_error_panic_hook"]
+
+# Protocol support (requires prost)
+protocol = ["prost", "bytes", "base64", "prost-build", "protoc-bin-vendored"]
 
 # Benchmark harness
 [[bench]]
@@ -71,7 +98,12 @@ strip = true        # Strip symbols for smaller binary
 [profile.release.package."*"]
 opt-level = 3
 
-# WASM-specific optimizations
+# WASM-specific optimizations (use with: cargo build --profile wasm-release)
 [profile.wasm-release]
 inherits = "release"
-opt-level = "z"     # Optimize for size
+opt-level = "z"           # Optimize for size (not speed)
+lto = "fat"               # Aggressive link-time optimization
+codegen-units = 1         # Better optimization (slower compile)
+panic = "abort"           # Smaller binary (no unwind tables)
+strip = "symbols"         # Remove debug symbols
+overflow-checks = false   # Disable overflow checks (smaller)

@@ -139,6 +139,7 @@ const WasmDeltaFinalization = (typeof FinalizationRegistry === 'undefined')
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmdelta_free(ptr >>> 0, 1));
 /**
  * JavaScript-friendly wrapper for DocumentDelta
+ * Only available when protocol support is enabled (core variant, not core-lite)
  */
 export class WasmDelta {
 

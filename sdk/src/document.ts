@@ -30,6 +30,11 @@ export class SyncDocument<T extends Record<string, unknown> = Record<string, unk
    * Initialize the document (loads from storage if available)
    */
   async init(): Promise<void> {
+    // Skip if already initialized
+    if (this.wasmDoc) {
+      return
+    }
+
     const wasm = await initWASM()
     this.wasmDoc = new wasm.WasmDocument(this.id)
     

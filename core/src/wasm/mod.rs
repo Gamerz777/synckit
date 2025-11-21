@@ -10,4 +10,8 @@ pub mod utils;
 
 // Re-export main types
 #[cfg(feature = "wasm")]
-pub use bindings::{WasmDocument, WasmVectorClock, WasmDelta};
+pub use bindings::{WasmDocument, WasmVectorClock};
+
+// WasmDelta only available with protocol support
+#[cfg(all(feature = "wasm", feature = "prost"))]
+pub use bindings::WasmDelta;

@@ -1,0 +1,16 @@
+{
+  "name": "synckit-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "sdk",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w sdk",
+    "build:examples": "npm run build --workspaces --if-present",
+    "dev:collaborative-editor": "npm run dev -w @synckit-examples/collaborative-editor",
+    "dev:project-management": "npm run dev -w @synckit-examples/project-management"
+  },
+  "devDependencies": {}
+}
