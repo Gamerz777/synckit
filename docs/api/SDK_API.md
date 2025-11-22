@@ -1,7 +1,7 @@
 # SyncKit SDK API Design
 
 **Version:** 0.1.0
-**Last Updated:** November 22, 2025
+**Last Updated:** November 23, 2025
 
 ---
 
@@ -12,10 +12,11 @@
 ### ✅ Implemented in v0.1.0
 
 **Core SDK (`@synckit/sdk`):**
-- ✅ `SyncKit` class with storage
+- ✅ `SyncKit` class: `init()`, `document()`, `listDocuments()`, `deleteDocument()`, `clearAll()`
 - ✅ `SyncDocument<T>` with LWW-CRDT
-- ✅ Methods: `get()`, `set()`, `update()`, `delete()`, `subscribe()`, `merge()`
+- ✅ Document methods: `init()`, `get()`, `getField()`, `set()`, `update()`, `delete()`, `subscribe()`, `merge()`, `toJSON()`, `dispose()`
 - ✅ IndexedDB & Memory storage adapters
+- ✅ Custom storage adapter interface
 
 **React (`@synckit/sdk/react`):**
 - ✅ `SyncProvider`, `useSyncKit()`, `useSyncDocument()`, `useSyncField()`, `useSyncDocumentList()`
@@ -258,17 +259,17 @@ todos.subscribe((results) => {
 
 ---
 
-## Tier 2: Text Sync (CRDT) *(Coming in v0.2.0)*
+## Tier 2: Text Sync (CRDT) ❌ *(NOT in v0.1.0 - Coming in v0.2.0)*
 
 **Use Cases:** Collaborative editors, note apps, documentation tools (15% of applications)
 
-**Note:** The Text CRDT API is planned for v0.2.0. The following is the proposed API design.
+**⚠️ WARNING:** The Text CRDT API is **NOT implemented in v0.1.0**. This is the **proposed** API design for v0.2.0.
 
-### Basic Usage
+### Basic Usage (Future API)
 
 ```typescript
-// Get text reference
-const noteText = sync.text('note-456')
+// ❌ NOT IMPLEMENTED - This code will NOT work in v0.1.0
+const noteText = sync.text('note-456')  // ❌ text() method doesn't exist
 
 // Subscribe to changes
 noteText.subscribe((content) => {
@@ -292,9 +293,10 @@ await noteText.replace(0, 5, 'Hi')
 const content = await noteText.get()
 ```
 
-### Text API
+### Text API (Proposed for v0.2.0)
 
 ```typescript
+// ❌ NOT IMPLEMENTED - Proposed API only
 class Text {
   // Subscribe to text changes
   subscribe(callback: (content: string) => void): () => void
@@ -344,17 +346,17 @@ type TextStyle = {
 
 ---
 
-## Tier 3: Custom CRDTs *(Coming in v0.2.0)*
+## Tier 3: Custom CRDTs ❌ *(NOT in v0.1.0 - Coming in v0.2.0)*
 
 **Use Cases:** Counters, sets, lists, whiteboards (5% of applications)
 
-**Note:** Counter and Set APIs are planned for v0.2.0. The following is the proposed API design.
+**⚠️ WARNING:** Counter and Set APIs are **NOT implemented in v0.1.0**. These are **proposed** API designs for v0.2.0.
 
-### Counter (PN-Counter)
+### Counter (PN-Counter) - Proposed API
 
 ```typescript
-// Get counter reference
-const likesCounter = sync.counter('likes-789')
+// ❌ NOT IMPLEMENTED - This code will NOT work in v0.1.0
+const likesCounter = sync.counter('likes-789')  // ❌ counter() method doesn't exist
 
 // Subscribe to changes
 likesCounter.subscribe((value) => {
@@ -375,9 +377,10 @@ await likesCounter.decrement()
 const currentCount = await likesCounter.get()
 ```
 
-### Counter API
+### Counter API (Proposed for v0.2.0)
 
 ```typescript
+// ❌ NOT IMPLEMENTED - Proposed API only
 class Counter {
   // Subscribe to counter changes
   subscribe(callback: (value: number) => void): () => void
@@ -399,11 +402,11 @@ class Counter {
 }
 ```
 
-### Set (OR-Set)
+### Set (OR-Set) - Proposed API
 
 ```typescript
-// Get set reference
-const tags = sync.set<string>('tags-101')
+// ❌ NOT IMPLEMENTED - This code will NOT work in v0.1.0
+const tags = sync.set<string>('tags-101')  // ❌ set() method doesn't exist
 
 // Subscribe to changes
 tags.subscribe((items) => {
@@ -429,9 +432,10 @@ const allTags = await tags.get()  // Returns Set<string>
 const count = await tags.size()
 ```
 
-### Set API
+### Set API (Proposed for v0.2.0)
 
 ```typescript
+// ❌ NOT IMPLEMENTED - Proposed API only
 class CRDTSet<T> {
   // Subscribe to set changes
   subscribe(callback: (items: Set<T>) => void): () => void
@@ -697,28 +701,48 @@ try {
 
 ## TypeScript Types
 
-### Full Type Definitions
+### Full Type Definitions (v0.1.0 Actual Exports)
 
 ```typescript
-// Re-export for convenience
-export { SyncKit, Document, Text, Counter, CRDTSet }
+// ✅ Core classes
+export { SyncKit } from '@synckit/sdk'
+export { SyncDocument } from '@synckit/sdk'
 
-// Configuration
-export interface SyncKitConfig { /* ... */ }
+// ✅ Storage adapters
+export { MemoryStorage, IndexedDBStorage, createStorage } from '@synckit/sdk'
+export type { StorageAdapter, StoredDocument } from '@synckit/sdk'
 
-// Status
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting'
+// ✅ Configuration and types
+export type {
+  SyncKitConfig,
+  DocumentData,
+  FieldPath,
+  SubscriptionCallback,
+  Unsubscribe,
+  QueuedOperation,
+  QueueConfig
+} from '@synckit/sdk'
 
-// Callbacks
-export type StatusChangeCallback = (status: ConnectionStatus) => void
-export type ErrorCallback = (error: SyncError) => void
-export type DocumentCallback<T> = (data: T) => void
+// ✅ Error classes
+export {
+  SyncKitError,
+  StorageError,
+  WASMError,
+  DocumentError
+} from '@synckit/sdk'
 
-// Storage adapters
-export type StorageType = 'indexeddb' | 'opfs' | 'sqlite' | 'memory'
+// ✅ React hooks (requires React)
+export {
+  SyncProvider,
+  useSyncKit,
+  useSyncDocument,
+  useSyncField,
+  useSyncDocumentList
+} from '@synckit/sdk/react'
+export type { SyncProviderProps } from '@synckit/sdk/react'
 
-// Auth
-export type AuthProvider = () => string | Promise<string>
+// ❌ NOT in v0.1.0: Text, Counter, CRDTSet, ConnectionStatus,
+// AuthProvider, StatusChangeCallback, ErrorCallback
 ```
 
 ---
