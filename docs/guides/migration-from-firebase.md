@@ -106,7 +106,7 @@ A comprehensive guide for migrating from Firebase/Firestore to SyncKit for true 
 | **Pricing** | 💰 Usage-based, unpredictable | ✅ Self-hosted, predictable | 🏆 SyncKit |
 | **Vendor Lock-in** | ❌ Deep Google integration | ✅ Open source, portable | 🏆 SyncKit |
 | **Query Capabilities** | ⚠️ Limited (single-field range) | ✅ Use any database (SQL, NoSQL) | 🏆 SyncKit |
-| **Bundle Size** | ~150KB gzipped | **~53KB** gzipped (~48KB lite) | 🏆 SyncKit (2.8x smaller) |
+| **Bundle Size** | ~150KB gzipped | **~49KB** gzipped (~44KB lite) | 🏆 SyncKit (3x smaller) |
 | **Cold Start** | ⚠️ 2-30s on slow networks | ✅ <100ms (local data) | 🏆 SyncKit |
 | **Managed Backend** | ✅ Fully managed | ⚠️ Self-hosted (or managed soon) | 🏆 Firebase |
 | **Auth Integration** | ✅ Built-in | ⚠️ Bring your own (JWT) | 🏆 Firebase |
@@ -162,8 +162,11 @@ Run Firebase and SyncKit **side-by-side** during transition:
 // Hybrid mode: Read from SyncKit, write to both
 async function updateTodo(id: string, updates: Partial<Todo>) {
   // Write to both systems
+  const doc = sync.document<Todo>(id)
+  await doc.init()
+
   await Promise.all([
-    synckit.document(id).update(updates),  // New system
+    doc.update(updates),  // New system
     firebase.doc(`todos/${id}`).update(updates)  // Old system (backup)
   ])
 }
@@ -261,7 +264,7 @@ const unsubscribe = todo.subscribe((data) => {
 })
 ```
 
-### Firebase Transactions → SyncKit Batch
+### Firebase Transactions → SyncKit Updates
 
 **Firebase:**
 ```typescript
@@ -274,14 +277,20 @@ await firebase.runTransaction(async (transaction) => {
 })
 ```
 
-**SyncKit:**
+**SyncKit (v0.1.0):**
 ```typescript
-// Automatic optimistic locking via LWW
-await sync.batch(() => {
-  const todo = sync.document<Todo>('todo-1')
-  todo.update({ count: currentCount + 1 })
-})
+// ⚠️ Note: Transactions not yet implemented in v0.1.0
+// Use optimistic updates with LWW conflict resolution
+const todo = sync.document<Todo>('todo-1')
+await todo.init()
+
+const currentData = todo.get()
+await todo.update({ count: currentData.count + 1 })
+
+// LWW automatically handles conflicts if multiple clients update simultaneously
 ```
+
+**Note:** True atomic transactions are planned for a future version. Currently, SyncKit uses LWW (Last-Write-Wins) for conflict resolution.
 
 ---
 
@@ -316,12 +325,12 @@ function TodoComponent({ id }: { id: string }) {
 
 **After (SyncKit):**
 ```typescript
-import { useSyncDocument } from '@synckit/sdk'
+import { useSyncDocument } from '@synckit/sdk/react'
 
 function TodoComponent({ id }: { id: string }) {
   const [todo, { update }] = useSyncDocument<Todo>(id)
 
-  if (!todo) return <div>Loading...</div>
+  if (!todo || !todo.text) return <div>Loading...</div>
 
   return <div>{todo.text}</div>
 }
@@ -524,10 +533,14 @@ const unsubscribe = firebase
 
 ```typescript
 async function getTodo(id: string): Promise<Todo> {
-  const [firebaseTodo, synckitTodo] = await Promise.all([
-    firebase.collection('todos').doc(id).get().then(d => d.data()),
-    sync.document<Todo>(id).get()
-  ])
+  // Get SyncKit data (synchronous)
+  const synckitDoc = sync.document<Todo>(id)
+  await synckitDoc.init()
+  const synckitTodo = synckitDoc.get()
+
+  // Get Firebase data (async)
+  const firebaseDoc = await firebase.collection('todos').doc(id).get()
+  const firebaseTodo = firebaseDoc.data()
 
   // Compare
   if (!isEqual(firebaseTodo, synckitTodo)) {
@@ -606,17 +619,24 @@ service cloud.firestore {
 }
 ```
 
-**SyncKit:**
+**SyncKit (v0.1.0):**
 ```typescript
-// Server-side JWT validation
+// ⚠️ Note: Network sync and authentication are not yet implemented in v0.1.0
 const sync = new SyncKit({
-  serverUrl: 'ws://localhost:8080',  // Optional - for remote sync
-  // Note: Built-in auth integration coming in future version
-  // For now, handle authentication at the server level
+  storage: 'indexeddb',
+  name: 'my-app'
+  // serverUrl: 'ws://localhost:8080',  // ⚠️ NOT FUNCTIONAL in v0.1.0
 })
+await sync.init()
 
-// Server validates JWT and checks permissions
+// For v0.1.0: Handle authentication at your API endpoints
+// Future: Built-in JWT validation and server sync coming in future version
 ```
+
+**Migration approach for v0.1.0:**
+- Use your own backend API for authentication
+- SyncKit handles offline-first local storage
+- Implement sync logic in your backend when network sync is available
 
 ### Challenge 2: Firebase Cloud Functions → Your Backend
 
@@ -631,16 +651,27 @@ exports.onTodoCreate = functions.firestore
   })
 ```
 
-**SyncKit:**
+**SyncKit (v0.1.0):**
 ```typescript
-// Backend webhook (Node.js/Bun)
-sync.on('document-created', async (event) => {
-  if (event.collection === 'todos') {
-    const todo = event.data
-    await sendNotification(todo.userId, 'New todo created')
-  }
+// ⚠️ Note: Event system not yet implemented in v0.1.0
+// Future: Will support document lifecycle events
+
+// Current v0.1.0 approach: Implement webhooks in your backend API
+// Example: Express.js endpoint
+app.post('/api/todos', async (req, res) => {
+  const todo = req.body
+
+  // Save to your database
+  await db.todos.create(todo)
+
+  // Send notification
+  await sendNotification(todo.userId, 'New todo created')
+
+  res.json({ success: true })
 })
 ```
+
+**Migration note:** In v0.1.0, implement server-side logic in your own backend. Document lifecycle events will be added in a future version.
 
 ### Challenge 3: Firebase Hosting → Your Hosting
 
@@ -682,7 +713,7 @@ aws s3 sync dist/ s3://my-bucket
 
 | Metric | Before (Firebase) | After (SyncKit) | Improvement |
 |--------|-------------------|-----------------|-------------|
-| **Bundle size** | ~150KB | **~53KB** (~48KB lite) | 65% smaller |
+| **Bundle size** | ~150KB | **~49KB** (~44KB lite) | 67% smaller |
 | **Offline storage** | 40MB (cache) | Unlimited (IndexedDB) | ∞ |
 | **Monthly cost** | $25-$2,000+ | $0 (self-hosted) | 100% savings |
 | **Initial load** | 2-30s | <100ms | 20-300x faster |
