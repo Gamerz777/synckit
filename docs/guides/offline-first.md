@@ -2,19 +2,22 @@
 
 **⚠️ IMPORTANT - v0.1.0 STATUS:**
 
-SyncKit v0.1.0 provides **local-first storage** but **network sync features are not yet implemented**.
+SyncKit v0.1.0 provides **complete offline-first architecture with network sync**.
 
 **What works now:**
 - ✅ IndexedDB/Memory storage
 - ✅ All CRUD operations work offline
 - ✅ Data persists across restarts
+- ✅ **Network sync with WebSocket**
+- ✅ **Offline queue with auto-replay**
+- ✅ **Network status tracking APIs**
 
 **Not yet implemented:**
-- ❌ Network sync
-- ❌ Offline queue, sync strategies
-- ❌ `connect`/`disconnect`/`reconnect` methods
+- ❌ Sync strategies (eager/lazy/manual sync modes)
+- ❌ Cross-tab synchronization
+- ❌ Query API for filtering documents
 
-**Use now for:** Fully offline apps. Network sync coming soon.
+**Use now for:** Offline-first apps with optional real-time sync across clients.
 
 ---
 
@@ -146,32 +149,29 @@ User Action → Local Write (instant) → Background Sync → Server
 
 ### How SyncKit Handles Offline
 
-**⚠️ v0.1.0 Note:** Network sync and cross-tab features described below are planned for future versions. Currently in v0.1.0, SyncKit works offline-only with IndexedDB persistence.
-
-**When Online (planned future version):**
+**When Online:**
 ```typescript
 await todo.update({ completed: true })
 // 1. Write to IndexedDB (~2ms)
-// 2. Send to server via WebSocket (~50ms) - NOT IN v0.1.0
-// 3. Broadcast to other tabs via BroadcastChannel (~1ms) - NOT IN v0.1.0
+// 2. Send to server via WebSocket (~50ms) ✅ v0.1.0
+// 3. Broadcast to other tabs via BroadcastChannel (~1ms) - Coming in future version
 ```
 
-**When Offline (planned future version):**
+**When Offline:**
 ```typescript
 await todo.update({ completed: true })
 // 1. Write to IndexedDB (~2ms)
-// 2. Queue for sync (automatic) - NOT IN v0.1.0
-// 3. Broadcast to other tabs via BroadcastChannel (~1ms) - NOT IN v0.1.0
-// 4. Retry sync when connection returns (automatic) - NOT IN v0.1.0
+// 2. Queue for sync (automatic) ✅ v0.1.0
+// 3. Broadcast to other tabs via BroadcastChannel (~1ms) - Coming in future version
+// 4. Retry sync when connection returns (automatic) ✅ v0.1.0
 ```
 
-**Current v0.1.0 behavior:**
-```typescript
-await todo.update({ completed: true })
-// 1. Write to IndexedDB (~2ms)
-// 2. Data persists across browser restarts
-// 3. Cross-tab sync and network sync coming in future version
-```
+**v0.1.0 features:**
+- ✅ Local IndexedDB storage with instant writes
+- ✅ Network sync with WebSocket when serverUrl configured
+- ✅ Offline queue automatically replays operations when reconnected
+- ✅ Network status tracking via `getNetworkStatus()` and `onNetworkStatusChange()`
+- ❌ Cross-tab sync (coming in future version)
 
 ---
 
@@ -289,21 +289,38 @@ async function toggleTodo(id: string) {
 - Financial transactions
 - Operations that can't be rolled back
 
-### Pattern 2: Offline Queue *(Coming in Future Version)*
+### Pattern 2: Offline Queue
 
-**⚠️ NOT YET IMPLEMENTED IN v0.1.0**
+**✅ FULLY IMPLEMENTED IN v0.1.0**
 
-Offline queue and network sync features are planned for a future release.
+SyncKit automatically queues operations when offline and replays them when connection returns.
 
-**Currently available in v0.1.0:**
-- ✅ Local IndexedDB storage
-- ✅ All CRUD operations work offline
-- ✅ Data persists across restarts
+**How it works:**
+```typescript
+// Configure with serverUrl to enable network sync + offline queue
+const sync = new SyncKit({
+  serverUrl: 'ws://localhost:8080',
+  storage: 'indexeddb',
+  name: 'my-app'
+})
+await sync.init()
 
-**Coming in future version:**
-- 🔜 Automatic offline queue
-- 🔜 Network synchronization
-- 🔜 Queue monitoring APIs
+// Make changes while offline
+await todo.update({ completed: true })
+// 1. Writes to IndexedDB immediately
+// 2. Queues for sync automatically
+// 3. When connection returns, syncs automatically
+
+// Monitor sync state per document
+const syncState = sync.getSyncState('todo-1')
+console.log('Pending operations:', syncState?.pendingOperations)
+```
+
+**Available in v0.1.0:**
+- ✅ Automatic offline queue with persistent storage
+- ✅ Auto-replay when connection restored
+- ✅ Per-document sync state tracking
+- ✅ Network status monitoring APIs
 
 ### Pattern 3: Sync Strategies *(Coming in Future Version)*
 
@@ -389,34 +406,44 @@ await sync.syncNow()  // Method doesn't exist in v0.1.0
 - Precise control needed
 - Testing/debugging
 
-### Pattern 4: Connection Status Handling - Planned Feature
+### Pattern 4: Connection Status Handling
 
-**⚠️ NOT YET IMPLEMENTED IN v0.1.0**
+**✅ FULLY IMPLEMENTED IN v0.1.0**
 
-Show users the connection state (coming in future version):
+Show users the network connection state:
 
 ```typescript
-// ⚠️ NOT FUNCTIONAL in v0.1.0 - APIs don't exist yet
+// ✅ WORKS IN v0.1.0 - Network status APIs available
 function ConnectionStatus() {
-  const [status, setStatus] = useState(sync.status)  // Property doesn't exist
+  const [status, setStatus] = useState<NetworkStatus | null>(null)
 
   useEffect(() => {
-    const unsubscribe = sync.onStatusChange(setStatus)  // Method doesn't exist
-    return unsubscribe
+    // Get current network status
+    const currentStatus = sync.getNetworkStatus()
+    setStatus(currentStatus)
+
+    // Subscribe to status changes
+    const unsubscribe = sync.onNetworkStatusChange?.((newStatus) => {
+      setStatus(newStatus)
+    })
+
+    return () => unsubscribe?.()
   }, [])
 
+  if (!status) return null
+
   return (
-    <div className={`status status-${status}`}>
-      {status === 'connected' && '🟢 Online'}
-      {status === 'connecting' && '🟡 Connecting...'}
-      {status === 'disconnected' && '🔴 Offline'}
-      {status === 'reconnecting' && '🟡 Reconnecting...'}
+    <div className={`status status-${status.connectionState}`}>
+      {status.connectionState === 'connected' && '🟢 Online'}
+      {status.connectionState === 'connecting' && '🟡 Connecting...'}
+      {status.connectionState === 'disconnected' && '🔴 Offline'}
+      {status.pendingOperations > 0 && ` (${status.pendingOperations} pending)`}
     </div>
   )
 }
 ```
 
-**Current v0.1.0 workaround:** Use browser's online/offline events:
+**Alternative:** Use browser's online/offline events for basic detection:
 ```typescript
 function ConnectionStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -691,26 +718,33 @@ if (!window.indexedDB) {
 
 ### Issue: "Changes not syncing to server"
 
-**⚠️ v0.1.0 Note:** Network sync is not yet implemented. This issue applies to future versions.
+**Cause:** Network blocked, wrong serverUrl, or authentication failed
 
-**Cause (future version):** Network blocked, wrong URL, or authentication failed
-
-**Debug (planned future version):**
+**Debug:**
 ```typescript
-// ⚠️ NOT FUNCTIONAL in v0.1.0 - These APIs don't exist
+// ✅ WORKS IN v0.1.0 - Network status APIs available
 // Check connection status
-console.log('Status:', sync.status)  // Property doesn't exist
+const networkStatus = sync.getNetworkStatus()
+console.log('Connection state:', networkStatus?.connectionState)
+console.log('Pending operations:', networkStatus?.pendingOperations)
 
-// Check queue size
-console.log('Pending changes:', sync.queueSize)  // Property doesn't exist
+// Check per-document sync state
+const syncState = sync.getSyncState('doc-id')
+console.log('Document sync state:', syncState?.state)
+console.log('Document pending ops:', syncState?.pendingOperations)
+console.log('Last error:', syncState?.error)
 
-// Listen for errors
-sync.onError((error) => {  // Method doesn't exist
-  console.error('Sync error:', error)
+// Monitor network status changes
+const unsubscribe = sync.onNetworkStatusChange?.((status) => {
+  console.log('Network status changed:', status)
 })
 ```
 
-**Current v0.1.0:** SyncKit works offline-only. All operations write to IndexedDB and persist locally.
+**Solutions:**
+- Verify serverUrl is correct and server is running
+- Check browser console for WebSocket errors
+- Verify network connectivity
+- Check that offline queue has capacity (default: 1000 operations)
 
 ### Issue: "App feels slow offline"
 
