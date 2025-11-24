@@ -2,27 +2,27 @@
 
 **⚠️ IMPORTANT - v0.1.0 STATUS:**
 
-This guide describes SyncKit's conflict resolution architecture. However, **most conflict resolution features are not yet fully implemented in v0.1.0**.
+This guide describes SyncKit's conflict resolution architecture. **v0.1.0 includes automatic LWW conflict resolution with network sync support.**
 
 **What works now in v0.1.0:**
 - ✅ LWW (Last-Write-Wins) CRDT conflict resolution (automatic, built into documents)
+- ✅ **Network sync with WebSocket (real-time conflict resolution across clients)**
+- ✅ **Offline queue with persistent storage (conflicts resolve when reconnected)**
 - ✅ Local-first data storage
 - ✅ Manual document merging via `doc.merge(otherDoc)`
 - ✅ Field-level granularity for updates
 
 **Not yet implemented (coming in future version):**
-- ❌ WebSocket connectivity (`connect`, `disconnect`, `reconnect` methods)
 - ❌ Conflict detection callbacks (`onConflict` method)
 - ❌ Custom conflict handlers (`conflictHandlers` option)
 - ❌ Conflict interface and conflict event objects
 - ❌ Text CRDT (`sync.text()` method)
-- ❌ Automatic real-time sync across devices
-- ❌ Network-related config options
+- ❌ Counter and Set CRDTs
 
 **How to use this guide:**
-- Sections marked with **"❌ NOT IN v0.1.0"** describe future APIs
-- Focus on understanding LWW concepts and the `doc.merge()` capability available now
-- Examples showing `onConflict`, `conflictHandlers`, `sync.text()`, and network features are for reference/planning only
+- Sections marked with **"❌ NOT IN v0.1.0"** describe future APIs (conflict callbacks, Text CRDT)
+- Network sync IS available - conflicts resolve automatically across connected clients
+- Examples showing `onConflict`, `conflictHandlers`, `sync.text()` are for future versions only
 
 ---
 
@@ -47,7 +47,7 @@ Learn how SyncKit handles conflicts automatically, and when to implement custom 
 
 A **conflict** occurs when two or more clients make different changes to the same data while disconnected, then sync.
 
-**Note:** In v0.1.0, network sync is not yet available. The conflict scenarios below demonstrate the LWW concept that will apply when network sync is implemented. Currently, you can test conflict resolution manually using `doc.merge()`.
+**Note:** In v0.1.0, network sync IS fully available with WebSocket support. The conflict scenarios below demonstrate LWW conflict resolution that happens automatically when clients sync through a server. You can also test conflict resolution manually using `doc.merge()`.
 
 ### Visual Example
 
@@ -221,11 +221,11 @@ await sync.deleteDocument('task-123')  // timestamp: 10:00:00
 const task = sync.document<Task>('task-123')
 await task.update({ title: 'Updated' })  // timestamp: 10:00:01
 
-// Note: In v0.1.0 (local-only), this scenario requires network sync
-// The example shows the conceptual behavior for when network sync is implemented
+// Note: This scenario demonstrates automatic network sync behavior
+// When both clients are connected to the same server, conflicts resolve automatically via LWW
 ```
 
-**Outcome:** ⚠️ This scenario requires network sync (not in v0.1.0). When implemented, update would win over delete (LWW).
+**Outcome:** Update wins over delete (LWW). Client B's update at 10:00:01 is newer than Client A's delete at 10:00:00, so the field is restored with "Updated".
 
 **Note:** `doc.delete(field)` deletes a **field**, not the document. Use `sync.deleteDocument(id)` to delete entire documents.
 
@@ -507,30 +507,47 @@ await task.update({
 })
 ```
 
-### 4. Test Offline Scenarios ❌ NOT IN v0.1.0
+### 4. Test Offline Scenarios
 
-**⚠️ Network connectivity APIs are not yet implemented in v0.1.0.**
+**Network sync IS implemented in v0.1.0**, but manual disconnect/reconnect controls are not exposed.
 
-Most conflicts occur when users work offline. Proposed testing approach (for when network sync is available):
+Most conflicts occur when users work offline. Testing approaches:
+
+**Option A: Natural offline testing** (network sync handles automatically):
 
 ```typescript
-// ❌ NOT IMPLEMENTED - This code will NOT work in v0.1.0
-// Simulate offline conflict
+// ✅ WORKS - Network sync with automatic reconnection
 async function testConflict() {
+  // Both clients connected to same server
+  const syncA = new SyncKit({
+    serverUrl: 'ws://localhost:8080',
+    clientId: 'client-a'
+  })
+  const syncB = new SyncKit({
+    serverUrl: 'ws://localhost:8080',
+    clientId: 'client-b'
+  })
+  await syncA.init()
+  await syncB.init()
+
   const taskA = syncA.document<Task>('task-1')
   const taskB = syncB.document<Task>('task-1')
+  await taskA.init()
+  await taskB.init()
 
-  // Disconnect both clients
-  await syncA.disconnect()  // ❌ disconnect() doesn't exist
-  await syncB.disconnect()  // ❌ disconnect() doesn't exist
+  // Simulate offline by killing network or server
+  // (In real testing: disable WiFi, stop server, or use network throttling)
+  // WebSocket will automatically detect disconnection
 
-  // Make conflicting changes
+  // Make conflicting changes while offline
   await taskA.update({ title: 'Version A' })
   await taskB.update({ title: 'Version B' })
 
-  // Reconnect and observe resolution
-  await syncA.reconnect()  // ❌ reconnect() doesn't exist
-  await syncB.reconnect()  // ❌ reconnect() doesn't exist
+  // When network returns, WebSocket automatically reconnects
+  // and conflicts resolve via LWW
+
+  // Wait for sync (monitor with syncA.getNetworkStatus())
+  await new Promise(resolve => setTimeout(resolve, 2000))
 
   // Both should converge to same value (LWW)
   const finalA = taskA.get()
@@ -540,7 +557,7 @@ async function testConflict() {
 }
 ```
 
-**Current v0.1.0 testing approach:** Test manual merging with `doc.merge()`:
+**Option B: Manual merge testing** (offline-only, no server needed):
 
 ```typescript
 // ✅ WORKS IN v0.1.0 - Test manual document merging
