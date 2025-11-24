@@ -121,7 +121,7 @@ const channel = supabase
 | Feature | Supabase | SyncKit | Winner |
 |---------|----------|---------|--------|
 | **Offline Support** | ❌ None (GitHub #357) | ✅ Native offline-first | 🏆 SyncKit |
-| **Real-Time Sync** | ✅ Postgres-backed | ⚠️ Coming soon (v0.1.0 local-only) | 🏆 Supabase |
+| **Real-Time Sync** | ✅ Postgres-backed | ✅ WebSocket-backed | 🤝 Both |
 | **Database** | ✅ Postgres (managed) | ⚠️ Bring your own | 🏆 Supabase |
 | **Auth** | ✅ Built-in | ⚠️ JWT-based | 🏆 Supabase |
 | **Row-Level Security** | ✅ Postgres RLS | ⚠️ Server-side validation | 🏆 Supabase |
@@ -473,14 +473,14 @@ Keep Supabase for backend features, add SyncKit for offline:
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const { data: { user } } = await supabase.auth.getUser()
 
-// Use SyncKit for offline-first data
+// Use SyncKit for offline-first data with network sync
 const sync = new SyncKit({
   storage: 'indexeddb',
-  name: 'my-app'
-  // serverUrl: 'ws://localhost:8080',  // ⚠️ NOT FUNCTIONAL in v0.1.0
-  // Note: Network sync and auth integration coming in future version
+  name: 'my-app',
+  serverUrl: 'ws://localhost:8080',  // ✅ Enables WebSocket sync (optional)
 })
 await sync.init()
+// Note: Auth is handled separately in your backend (SyncKit focuses on sync)
 
 // Use Supabase Storage for files
 const { data, error } = await supabase.storage
@@ -541,7 +541,7 @@ describe('Supabase + SyncKit hybrid', () => {
       completed: false
     })
 
-    // ⚠️ Note: In v0.1.0, SyncKit is local-only (no network sync)
+    // ✅ SyncKit supports both offline-first AND network sync
     // This test demonstrates local offline capability
 
     // Update works immediately (local-first)
@@ -550,8 +550,8 @@ describe('Supabase + SyncKit hybrid', () => {
     const data = todo.get()
     expect(data.completed).toBe(true)
 
-    // Future: When network sync is implemented, you would sync to server here
-    // For now, manually sync to Supabase if needed:
+    // If serverUrl is configured, changes sync automatically to server
+    // You can also manually sync to Supabase for hybrid approach:
     await supabase
       .from('todos')
       .update({ completed: true })
@@ -561,13 +561,13 @@ describe('Supabase + SyncKit hybrid', () => {
   test('Supabase handles auth token refresh automatically', async () => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-    // ⚠️ Note: SyncKit v0.1.0 doesn't handle auth
+    // Note: SyncKit doesn't enforce auth (by design)
     // Use Supabase auth, which automatically refreshes tokens
 
     const sync = new SyncKit({
       storage: 'indexeddb',
-      name: 'my-app'
-      // Network sync coming in future version
+      name: 'my-app',
+      serverUrl: 'ws://localhost:8080'  // Optional: enables network sync
     })
     await sync.init()
 
@@ -592,11 +592,11 @@ describe('Supabase + SyncKit hybrid', () => {
 // Keep existing Supabase code
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Add SyncKit
+// Add SyncKit with network sync
 const sync = new SyncKit({
   storage: 'indexeddb',
-  name: 'my-app'
-  // serverUrl: 'ws://localhost:8080',  // ⚠️ NOT FUNCTIONAL in v0.1.0
+  name: 'my-app',
+  serverUrl: 'ws://localhost:8080',  // ✅ Enables real-time sync (optional)
 })
 await sync.init()
 
@@ -614,10 +614,9 @@ async function updateTodo(id: string, updates: Partial<Todo>) {
 
 **Validation:**
 - ✅ SyncKit initialized (local storage working)
+- ✅ Network sync working (if serverUrl configured)
 - ✅ Dual-write working
 - ✅ No user-facing changes
-
-**Note:** In v0.1.0, SyncKit is local-only. Network sync coming in future version.
 
 ### Phase 2: Migrate Reads to SyncKit (Week 2)
 
@@ -679,7 +678,7 @@ const [todo, { update }] = useSyncDocument<Todo>(id)
 3. **Mobile-ready:** SyncKit makes Supabase viable for mobile apps
 4. **Minimal changes:** Add offline without rewriting existing code
 5. **Bundle size:** Similar sizes (~58KB SyncKit vs ~45KB Supabase)
-6. **v0.1.0 note:** SyncKit is currently local-only; network sync coming in future version
+6. **Network sync:** SyncKit v0.1.0 includes WebSocket-based real-time sync
 
 **Migration Decision Matrix:**
 
