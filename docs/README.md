@@ -48,11 +48,12 @@ Complete API documentation:
 
 ### Core SDK
 - **[SDK API Reference](api/SDK_API.md)** - Complete API for `SyncKit`, `Document`, `Text`, `Counter`, `Set`
+- **[Network API Reference](api/NETWORK_API.md)** - Network sync, offline queue, connection monitoring
 - **[Configuration Options](api/SDK_API.md#configuration-options)** - All SyncKit config options
 - **[Storage API](api/SDK_API.md#storage-adapters)** - IndexedDB, memory, OPFS, SQLite
 
 ### Framework Adapters
-- **[React Hooks](api/SDK_API.md#react-hooks)** - `useSyncDocument`, `useSyncField`, `useSyncDocumentList`
+- **[React Hooks](api/SDK_API.md#react-hooks)** - `useSyncDocument`, `useSyncField`, `useNetworkStatus`, `useSyncState`
 - **[Vue Composables](api/SDK_API.md#vue-composables)** - Vue 3 integration *(coming soon)*
 - **[Svelte Stores](api/SDK_API.md#svelte-stores)** - Svelte integration *(coming soon)*
 
@@ -134,7 +135,7 @@ Learn from working examples:
 - Local update: <1ms (371ns single field)
 - IndexedDB write: 1-5ms
 - Network sync: 10-50ms p95
-- Cross-tab sync: <1ms (BroadcastChannel)
+- Multi-client sync: 10-100ms (WebSocket server)
 
 **[Learn more about performance →](guides/performance.md)**
 
@@ -177,8 +178,10 @@ if (navigator.storage && navigator.storage.persist) {
 
 **Changes not syncing across tabs**
 ```typescript
-// Ensure same document ID in both tabs
-const todo = sync.document<Todo>('todo-1')  // Must be identical ID
+// Note: Cross-tab sync via BroadcastChannel is not yet implemented in v0.1.0
+// For now, each tab connects independently to the server
+// Multi-tab scenarios work through server-mediated sync
+const todo = sync.document<Todo>('todo-1')  // Same ID in both tabs
 ```
 
 **TypeScript errors**
@@ -221,25 +224,29 @@ We welcome contributions!
 
 ## 📊 Status
 
-**Current Phase:** Phase 9 - Documentation & Examples (80% complete)
-**Next Release:** v0.1.0 *(~2 weeks)*
+**Current Release:** v0.1.0 (November 2025)
+**Next Phase:** Phase 10 - Launch Preparation
 
 ### What's Complete ✅
 
 - ✅ Core Rust engine (LWW sync, Text CRDT, protocol)
-- ✅ TypeScript SDK (Document API, storage, offline queue)
-- ✅ React integration (`useSyncDocument`, `useSyncField`, `useSyncDocumentList`)
+- ✅ TypeScript SDK (Document API, storage, React hooks)
+- ✅ Network sync layer (WebSocket, offline queue, auto-reconnect)
+- ✅ React integration (`useSyncDocument`, `useSyncField`, `useNetworkStatus`, `useSyncState`)
 - ✅ TypeScript server (WebSocket sync, JWT auth, PostgreSQL)
-- ✅ Testing infrastructure (385 tests)
-- ✅ Documentation (8 comprehensive guides)
-- ✅ Formal verification (TLA+, 118K states)
+- ✅ Example applications (todo app, collaborative editor, project management)
+- ✅ Testing infrastructure (91% coverage, 100+ tests)
+- ✅ Documentation (API reference, guides, migration docs)
+- ✅ Formal verification (TLA+, 118K states explored)
 
 ### What's Next 🚧
 
-- 🚧 Example applications (collaborative editor, project management)
+- 🚧 Cross-tab sync (BroadcastChannel for local multi-tab)
 - 🚧 Multi-language servers (Python, Go, Rust)
 - 🚧 Vue & Svelte adapters
-- 🚧 Advanced storage (OPFS, SQLite)
+- 🚧 Advanced storage adapters (OPFS, SQLite)
+- 🚧 Production deployment guides
+- 🚧 NPM package publication
 
 **[Full roadmap →](../ROADMAP.md)**
 
@@ -256,6 +263,7 @@ MIT License - see [LICENSE](../LICENSE) for details.
 - **[Main README](../README.md)** - Project overview
 - **[Getting Started](guides/getting-started.md)** - 5-minute tutorial
 - **[API Reference](api/SDK_API.md)** - Complete API docs
+- **[Network API](api/NETWORK_API.md)** - Network sync documentation
 - **[Examples](../examples/)** - Working examples
 - **[GitHub](https://github.com/Dancode-188/synckit)** - Source code
 - **[Roadmap](../ROADMAP.md)** - Development timeline
