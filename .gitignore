@@ -97,3 +97,7 @@ analysis/
 # Test environment
 tests/bun.lock
 tests/node_modules/
+
+# Temporary test files at root (use proper test directories instead)
+test-*.mjs
+test-*.js

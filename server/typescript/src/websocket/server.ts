@@ -9,6 +9,8 @@ import {
   AuthMessage,
   AuthSuccessMessage,
   AuthErrorMessage,
+  SubscribeMessage,
+  UnsubscribeMessage,
   SyncRequestMessage,
   SyncResponseMessage,
   DeltaMessage,
@@ -77,6 +79,11 @@ export class SyncWebSocketServer {
       pubsub: options?.pubsub,
       serverId: `server-${Date.now()}`,
     });
+
+    // Log authentication mode
+    const authRequired = process.env.SYNCKIT_AUTH_REQUIRED !== 'false';
+    console.log(`🔐 Authentication: ${authRequired ? 'Required' : 'Disabled (Dev Mode)'}`);
+
     this.setupHandlers();
   }
 
@@ -112,6 +119,25 @@ export class SyncWebSocketServer {
     // Start heartbeat
     connection.startHeartbeat(config.wsHeartbeatInterval);
 
+    // Check if authentication is required
+    const authRequired = process.env.SYNCKIT_AUTH_REQUIRED !== 'false';
+
+    if (!authRequired) {
+      // Auto-authenticate for development
+      connection.state = ConnectionState.AUTHENTICATED;
+      connection.userId = 'anonymous';
+      connection.tokenPayload = {
+        userId: 'anonymous',
+        permissions: {
+          canRead: [],
+          canWrite: [],
+          isAdmin: true,
+        },
+      };
+      this.registry.linkUser(connection.id, 'anonymous');
+      console.log(`Connection ${connection.id} auto-authenticated (auth disabled)`);
+    }
+
     // Setup message handlers
     connection.on('message', async (message: Message) => {
       await this.handleMessage(connection, message);
@@ -134,8 +160,24 @@ export class SyncWebSocketServer {
           // CONNECT is handled during connection setup, acknowledge it
           break;
 
+        case MessageType.PING:
+          // PING is handled by Connection class internally
+          break;
+
+        case MessageType.PONG:
+          // PONG is received in response to our pings
+          break;
+
         case MessageType.AUTH:
           await this.handleAuth(connection, message as AuthMessage);
+          break;
+
+        case MessageType.SUBSCRIBE:
+          await this.handleSubscribe(connection, message as SubscribeMessage);
+          break;
+
+        case MessageType.UNSUBSCRIBE:
+          await this.handleUnsubscribe(connection, message as UnsubscribeMessage);
           break;
 
         case MessageType.SYNC_REQUEST:
@@ -151,10 +193,10 @@ export class SyncWebSocketServer {
           break;
 
         default:
-          console.warn(`Unknown message type: ${message.type}`);
+          console.warn(`[Server] Unknown message type: ${message.type}`);
       }
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error('[Server] Error handling message:', error);
       connection.sendError('Internal server error');
     }
   }
@@ -228,6 +270,80 @@ export class SyncWebSocketServer {
   }
 
   /**
+   * Handle subscribe - client wants to subscribe to a document
+   */
+  private async handleSubscribe(connection: Connection, message: SubscribeMessage) {
+    const { documentId } = message;
+
+    console.log(`[handleSubscribe] ${connection.id} subscribing to ${documentId}`);
+
+    // Check authentication
+    if (connection.state !== ConnectionState.AUTHENTICATED || !connection.tokenPayload) {
+      connection.sendError('Not authenticated');
+      return;
+    }
+
+    // Check read permission
+    if (!canReadDocument(connection.tokenPayload, documentId)) {
+      connection.sendError('Permission denied', { documentId });
+      return;
+    }
+
+    try {
+      // Load document from storage (if available)
+      await this.coordinator.getDocument(documentId);
+
+      // Subscribe connection to document updates
+      this.coordinator.subscribe(documentId, connection.id);
+      connection.addSubscription(documentId);
+
+      // Get current document state and vector clock
+      const state = this.coordinator.getDocumentState(documentId);
+      const vectorClock = this.coordinator.getVectorClock(documentId);
+
+      // Send sync response with current state
+      const response: SyncResponseMessage = {
+        type: MessageType.SYNC_RESPONSE,
+        id: createMessageId(),
+        timestamp: Date.now(),
+        requestId: message.id,
+        documentId,
+        state,
+        deltas: [],
+      };
+
+      // Add clock to response payload for SDK compatibility (SDK uses 'clock' not 'vectorClock')
+      (response as any).clock = vectorClock;
+
+      connection.send(response);
+
+      console.log(`[handleSubscribe] ${connection.id} subscribed to ${documentId}`);
+    } catch (error) {
+      console.error('[handleSubscribe] Error:', error);
+      connection.sendError('Subscribe failed', { documentId });
+    }
+  }
+
+  /**
+   * Handle unsubscribe - client wants to unsubscribe from a document
+   */
+  private async handleUnsubscribe(connection: Connection, message: UnsubscribeMessage) {
+    const { documentId } = message;
+
+    console.log(`[handleUnsubscribe] ${connection.id} unsubscribing from ${documentId}`);
+
+    try {
+      // Remove subscription
+      this.coordinator.unsubscribe(documentId, connection.id);
+
+      console.log(`[handleUnsubscribe] ${connection.id} unsubscribed from ${documentId}`);
+    } catch (error) {
+      console.error('[handleUnsubscribe] Error:', error);
+      connection.sendError('Unsubscribe failed', { documentId });
+    }
+  }
+
+  /**
    * Handle sync request - client wants document state
    */
   private async handleSyncRequest(connection: Connection, message: SyncRequestMessage) {
@@ -285,10 +401,44 @@ export class SyncWebSocketServer {
 
   /**
    * Handle delta - client sending changes
+   * Supports both SDK field/value format and server delta format
    */
   private async handleDelta(connection: Connection, message: DeltaMessage) {
-    // console.log(`[handleDelta] Processing delta for ${message.documentId}`);
-    const { documentId, vectorClock, delta } = message;
+    const { documentId } = message;
+
+    // Normalize payload to handle both SDK and server formats
+    let delta = (message as any).delta;
+    let vectorClock = (message as any).vectorClock;
+
+    // Handle SDK field/value format
+    if (!delta && (message as any).field !== undefined) {
+      // SDK client sent individual field/value, convert to delta format
+      const field = (message as any).field;
+      const value = (message as any).value;
+      delta = { [field]: value };
+
+      console.log(`[handleDelta] Converted SDK field/value to delta:`, delta);
+    }
+
+    // Handle clock vs vectorClock naming (SDK uses 'clock', server uses 'vectorClock')
+    if (!vectorClock && (message as any).clock) {
+      vectorClock = (message as any).clock;
+      console.log(`[handleDelta] Using 'clock' as vectorClock`);
+    }
+
+    // Validate we have required data
+    if (!delta || typeof delta !== 'object' || Object.keys(delta).length === 0) {
+      console.error(`[handleDelta] Invalid or empty delta in message:`, {
+        documentId,
+        hasDelta: !!delta,
+        deltaType: typeof delta,
+        deltaKeys: delta ? Object.keys(delta).length : 0,
+      });
+      connection.sendError('Invalid delta message: missing or empty delta');
+      return;
+    }
+
+    console.log(`[handleDelta] Processing delta for ${documentId}:`, delta);
 
     // console.log(`[handleDelta] Checking authentication`);
     // Check authentication
@@ -357,6 +507,20 @@ export class SyncWebSocketServer {
       // This coalesces rapid updates into fewer messages, reducing ACK overhead
       this.addToBatch(documentId, authoritativeDelta, message);
 
+      // Send ACK back to sender to confirm message received and processed
+      // Note: SDK sends messageId in the payload, not as message.id
+      const originalMessageId = (message as any).messageId || message.id;
+
+      const ack: AckMessage = {
+        type: MessageType.ACK,
+        id: createMessageId(),
+        timestamp: Date.now(),
+        messageId: originalMessageId,
+      };
+
+      const ackSent = connection.send(ack);
+      console.log(`[handleDelta] ACK sent to ${connection.id} for message ${originalMessageId}: ${ackSent}`);
+
       // console.log(`Delta applied to ${message.documentId} from ${connection.id}`);
     } catch (error) {
       console.error('Error handling delta:', error);
@@ -416,6 +580,7 @@ export class SyncWebSocketServer {
 
   /**
    * Flush batched deltas for a document
+   * Broadcasts individual field updates in SDK-compatible format
    */
   private flushBatch(documentId: string) {
     const batch = this.pendingBatches.get(documentId);
@@ -425,19 +590,39 @@ export class SyncWebSocketServer {
     clearTimeout(batch.timer);
     this.pendingBatches.delete(documentId);
 
-    // Broadcast the coalesced delta
+    // Broadcast field updates
     if (Object.keys(batch.delta).length > 0) {
-      const authoritativeMessage: DeltaMessage = {
-        type: MessageType.DELTA,
-        id: createMessageId(),
-        timestamp: Date.now(),
-        documentId,
-        delta: batch.delta,
-        vectorClock: {},
-      };
+      // Get current vector clock
+      const vectorClock = this.coordinator.getVectorClock(documentId);
 
-      console.log(`[Server] Broadcasting batched delta for ${documentId} (${Object.keys(batch.delta).length} fields):`, batch.delta);
-      this.broadcast(documentId, authoritativeMessage);
+      console.log(`[Server] Broadcasting ${Object.keys(batch.delta).length} field update(s) for ${documentId}`);
+
+      // Send individual field updates (SDK format)
+      for (const [field, value] of Object.entries(batch.delta)) {
+        const subscribers = this.coordinator.getSubscribers(documentId);
+
+        for (const connectionId of subscribers) {
+          const connection = this.registry.get(connectionId);
+          if (!connection || connection.state !== ConnectionState.AUTHENTICATED) {
+            continue;
+          }
+
+          // Create SDK-compatible message (field/value/clock format)
+          const fieldMessage: any = {
+            type: MessageType.DELTA,
+            id: createMessageId(),
+            timestamp: Date.now(),
+            documentId,
+            field,
+            value,
+            clock: vectorClock,  // SDK uses 'clock' not 'vectorClock'
+            clientId: 'server',
+          };
+
+          console.log(`[Server] Broadcasting field "${field}" to ${connectionId} (${connection.protocolType} protocol)`);
+          connection.send(fieldMessage);
+        }
+      }
     }
   }
 

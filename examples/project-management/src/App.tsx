@@ -12,7 +12,7 @@ import TeamPresence from './components/TeamPresence'
 // Initialize SyncKit
 const sync = new SyncKit({
   storage: 'indexeddb',
-  // url: 'ws://localhost:8080', // Uncomment to enable server sync
+  serverUrl: 'ws://localhost:8080/ws', // Server sync enabled for testing
 })
 
 function App() {

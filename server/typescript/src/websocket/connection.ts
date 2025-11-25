@@ -35,7 +35,8 @@ export class Connection {
   public userId?: string;
   public clientId?: string;
   public tokenPayload?: TokenPayload; // Store full token payload for permissions
-  
+  public protocolType: 'binary' | 'json' = 'binary'; // Default to binary (SDK protocol)
+
   private ws: WebSocket;
   private heartbeatInterval?: Timer;
   private isAlive: boolean = true;
@@ -60,13 +61,19 @@ export class Connection {
   }
 
   /**
-   * Handle incoming message
+   * Handle incoming message (supports both binary and JSON protocols)
    */
   private handleMessage(data: Buffer | string) {
     try {
-      const raw = data.toString();
-      const message = parseMessage(raw);
-      
+      // Detect protocol type from first message
+      if (typeof data === 'string' && this.protocolType === 'binary') {
+        this.protocolType = 'json';
+        console.log(`[Connection ${this.id}] Detected JSON protocol`);
+      }
+
+      // Parse message (parseMessage handles both Buffer and string)
+      const message = parseMessage(data);
+
       if (!message) {
         this.sendError('Invalid message format');
         return;
@@ -74,13 +81,13 @@ export class Connection {
 
       // Emit event for message handlers
       this.emit('message', message);
-      
+
       // Handle ping internally
       if (message.type === MessageType.PING) {
         this.sendPong(message.id);
       }
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error(`[Connection ${this.id}] Error handling message:`, error);
       this.sendError('Internal server error');
     }
   }
@@ -110,7 +117,7 @@ export class Connection {
   }
 
   /**
-   * Send message to client
+   * Send message to client (uses detected protocol type)
    */
   send(message: Message): boolean {
     if (this.ws.readyState !== 1) { // 1 = OPEN
@@ -118,10 +125,12 @@ export class Connection {
     }
 
     try {
-      this.ws.send(serializeMessage(message));
+      const useBinary = this.protocolType === 'binary';
+      const data = serializeMessage(message, useBinary);
+      this.ws.send(data);
       return true;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error(`[Connection ${this.id}] Error sending message:`, error);
       return false;
     }
   }

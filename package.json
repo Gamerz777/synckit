@@ -19,5 +19,7 @@
     "type-check": "npm run lint -w sdk && cd server/typescript && bun run typecheck && cd ../..",
     "check": "npm run lint && npm run type-check && npm test"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
 }
