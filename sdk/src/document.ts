@@ -54,6 +54,8 @@ export class SyncDocument<T extends Record<string, unknown> = Record<string, unk
     // Register with sync manager if available
     if (this.syncManager) {
       this.syncManager.registerDocument(this)
+      // Subscribe to server updates for real-time sync
+      await this.syncManager.subscribeDocument(this.id)
     }
   }
   
