@@ -11,10 +11,10 @@ SyncKit v0.1.0 provides **complete offline-first architecture with network sync*
 - ✅ **Network sync with WebSocket**
 - ✅ **Offline queue with auto-replay**
 - ✅ **Network status tracking APIs**
+- ✅ **Cross-tab synchronization via BroadcastChannel API**
 
 **Not yet implemented:**
 - ❌ Sync strategies (eager/lazy/manual sync modes)
-- ❌ Cross-tab synchronization
 - ❌ Query API for filtering documents
 
 **Use now for:** Offline-first apps with optional real-time sync across clients.
@@ -154,7 +154,7 @@ User Action → Local Write (instant) → Background Sync → Server
 await todo.update({ completed: true })
 // 1. Write to IndexedDB (~2ms)
 // 2. Send to server via WebSocket (~50ms) ✅ v0.1.0
-// 3. Broadcast to other tabs via BroadcastChannel (~1ms) - Coming in future version
+// 3. Broadcast to other tabs via BroadcastChannel (~1ms) ✅ v0.1.0
 ```
 
 **When Offline:**
@@ -162,7 +162,7 @@ await todo.update({ completed: true })
 await todo.update({ completed: true })
 // 1. Write to IndexedDB (~2ms)
 // 2. Queue for sync (automatic) ✅ v0.1.0
-// 3. Broadcast to other tabs via BroadcastChannel (~1ms) - Coming in future version
+// 3. Broadcast to other tabs via BroadcastChannel (~1ms) ✅ v0.1.0
 // 4. Retry sync when connection returns (automatic) ✅ v0.1.0
 ```
 
@@ -171,7 +171,7 @@ await todo.update({ completed: true })
 - ✅ Network sync with WebSocket when serverUrl configured
 - ✅ Offline queue automatically replays operations when reconnected
 - ✅ Network status tracking via `getNetworkStatus()` and `onNetworkStatusChange()`
-- ❌ Cross-tab sync (coming in future version)
+- ✅ Cross-tab sync via BroadcastChannel API
 
 ---
 

@@ -654,42 +654,62 @@ function TaskItem({ taskId }: { taskId: string }) {
 
 ## Advanced Topics
 
-### Clock Skew Handling ❌ NOT IN v0.1.0
+### Clock Skew Handling
 
-**⚠️ Server-based clock skew handling requires network sync (not in v0.1.0).**
+**✅ Network sync is available in v0.1.0**, but uses client-side timestamps.
 
-LWW depends on accurate timestamps. When network sync is implemented, SyncKit will handle clock skew automatically:
-
-```typescript
-// ❌ NOT IMPLEMENTED - Requires network sync (future version)
-// Server timestamps used for conflict resolution
-// Client timestamps adjusted based on server offset
-
-// Client A: Local time 10:00:00, Server time 10:00:05 (5s ahead)
-await task.update({ title: 'A' })  // Will be adjusted to 10:00:05
-
-// Client B: Local time 10:00:01, Server time 10:00:01 (in sync)
-await task.update({ title: 'B' })  // Timestamp: 10:00:01
-
-// Result: Client A wins (adjusted timestamp is later)
-```
-
-**Current v0.1.0 behavior:** Uses local client timestamps via `Date.now()`. For manual merging with `doc.merge()`, the later timestamp wins based on local clocks.
-
-### Vector Clocks (Future)
-
-For more precise conflict detection, SyncKit will support **vector clocks** in v0.2.0:
+LWW depends on accurate timestamps. v0.1.0 uses local client clocks, which can have skew:
 
 ```typescript
-// ❌ NOT IMPLEMENTED - Future API (v0.2.0)
-const sync = new SyncKit({
-  serverUrl: 'ws://localhost:8080',
-  conflictResolution: 'vector-clock'  // ❌ This option doesn't exist yet
-})
+// ✅ WORKS IN v0.1.0 - Uses client timestamps
+// Client A: Local time 10:00:00 (clock 5s ahead of actual time)
+await task.update({ title: 'A' })  // Timestamp: 10:00:00 (from client's clock)
 
-// Will detect causality violations
-// Can identify concurrent edits vs sequential edits
+// Client B: Local time 09:59:55 (clock accurate)
+await task.update({ title: 'B' })  // Timestamp: 09:59:55
+
+// Result: Client A wins (has later timestamp due to clock skew)
 ```
+
+**Current v0.1.0 behavior:**
+- Uses local client timestamps via `Date.now()`
+- Network sync transmits client timestamps as-is
+- Clock skew between clients can affect conflict resolution
+- For most applications, this is acceptable (clock skew is usually <1 second)
+
+**Future enhancement (v0.2+):** Server-based timestamp adjustment to eliminate clock skew issues.
+
+### Vector Clocks ✅ IMPLEMENTED IN v0.1.0
+
+**Vector clocks are already implemented** and used internally for causality tracking:
+
+```typescript
+// ✅ WORKS IN v0.1.0 - Vector clocks used automatically
+// Every operation includes a vector clock for causality tracking
+
+interface VectorClock {
+  [clientId: string]: number  // Logical timestamp per client
+}
+
+// Example operation:
+{
+  type: 'set',
+  documentId: 'task-123',
+  field: 'title',
+  value: 'New title',
+  clock: { 'client-a': 5, 'client-b': 3 },  // Vector clock
+  clientId: 'client-a',
+  timestamp: 1732147201500  // Physical timestamp for LWW
+}
+```
+
+**How it works in v0.1.0:**
+- Each client maintains a vector clock (logical timestamps per client)
+- Vector clocks track causality relationships between operations
+- LWW uses physical timestamps, but vector clocks provide additional metadata
+- Used internally for conflict detection and operation ordering
+
+**Note:** While vector clocks are implemented, the conflict resolution algorithm uses LWW (physical timestamps). The vector clock data is available but not exposed in the public API yet.
 
 ### Custom CRDT Types
 

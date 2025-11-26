@@ -2,7 +2,7 @@
 
 **Version:** 0.1.0
 **Status:** v0.1.0 Released - Implementation Complete
-**Last Updated:** November 25, 2025
+**Last Updated:** November 26, 2025
 
 ---
 
@@ -30,7 +30,7 @@ SyncKit is a **local-first sync engine** designed for modern web and mobile appl
 **Key Differentiators:**
 - 🚀 **Performance**: <1ms local operations, <100ms sync (p95)
 - 🔄 **Three-Tier Architecture**: LWW (80%), Text CRDTs (15%), Custom CRDTs (5%)
-- 📦 **Compact Bundle**: ~58KB gzipped (~45KB lite) - Larger than Yjs (~19KB pure JS), smaller than Automerge (~60-78KB)
+- 📦 **Compact Bundle**: ~59KB gzipped (~45KB lite) - Larger than Yjs (~19KB pure JS), smaller than Automerge (~60-78KB)
 - 🌐 **Universal**: Works everywhere (browser, Node.js, mobile, desktop)
 - 🔒 **Data Integrity**: Formally verified with TLA+ (zero data loss guarantee)
 
@@ -151,10 +151,10 @@ SyncKit is a **local-first sync engine** designed for modern web and mobile appl
 
 **Responsibilities:**
 - Simple, intuitive API wrapping Rust core
-- Storage adapters (IndexedDB, OPFS, SQLite)
+- Storage adapters (IndexedDB, Memory - v0.1.0; OPFS, SQLite planned for v0.2+)
 - Offline operation queue with retry logic
 - WebSocket connection management
-- Framework integrations (React, Vue, Svelte)
+- Framework integrations (React in v0.1.0; Vue, Svelte planned for v0.2+)
 
 **Why TypeScript:**
 - Native to web development
@@ -333,36 +333,32 @@ Clear Offline Queue (operations now synced)
 
 ### Client-Side Storage
 
-**Browser:**
+**Browser (v0.1.0):**
 ```
 Primary: IndexedDB
   ↓
 ObjectStore: documents
   - key: DocumentID
   - value: Document (JSON)
-  
+
 ObjectStore: deltas (for offline queue)
   - key: OperationID
-  - value: Delta (Protobuf bytes)
+  - value: Delta (Binary encoded)
 
-Fallback: OPFS (Origin Private File System)
+Fallback: Memory
+  - In-memory storage for Node.js or when IndexedDB unavailable
+  - Data lost on page reload
+```
+
+**Future Storage Options (v0.2+):**
+```
+OPFS (Origin Private File System):
   - Faster for large datasets (100K+ records)
-  - Not available in all browsers
-```
+  - Not yet available in all browsers
 
-**Mobile/Desktop:**
-```
-Primary: SQLite
-  ↓
-Table: documents
-  - id: TEXT PRIMARY KEY
-  - data: JSON
-  - version: TEXT (serialized VectorClock)
-  
-Table: offline_queue
-  - id: INTEGER PRIMARY KEY
-  - operation: BLOB (Protobuf)
-  - created_at: INTEGER
+SQLite (Mobile/Desktop):
+  - Native mobile/desktop apps
+  - Table structure similar to IndexedDB
 ```
 
 **Storage Schema Design:**
@@ -468,9 +464,10 @@ Client                          Server
   |                               |
 ```
 
-**Binary Protocol (Protobuf):**
-- 5-10x smaller than JSON
-- Fast encoding/decoding
+**Binary Protocol (Custom Format):**
+- Header: [type: 1 byte][timestamp: 8 bytes][payload length: 4 bytes]
+- Payload: JSON (considered Protobuf for v0.2+ for better compression)
+- 13-byte header overhead, efficient for small messages
 - Compression over WebSocket (gzip/Brotli)
 
 **Connection Recovery:**
@@ -614,10 +611,10 @@ fn contains(&self, element: &T) -> bool {
 |-----------|----------------|-------|
 | WASM Core (default) | 48KB | Full-featured with all CRDTs |
 | WASM Core (lite) | 43KB | Local-only, LWW + vector clocks |
-| TypeScript SDK | ~4KB | JavaScript wrapper |
-| React Adapter | ~3KB | Hooks (separate package) |
-| Total (default) | ~58KB | Production-ready (48KB WASM + 9KB JS) |
-| Total (lite) | ~45KB | Size-critical apps (43KB WASM + 1KB JS) |
+| TypeScript SDK | ~10KB | JavaScript wrapper |
+| React Adapter | ~1KB | Hooks (included in SDK) |
+| Total (default) | ~59KB | Production-ready (48KB WASM + 10KB JS) |
+| Total (lite) | ~45KB | Size-critical apps (43KB WASM + 1.5KB JS) |
 
 ### Throughput Targets
 
@@ -796,4 +793,4 @@ SyncKit's architecture is designed for **performance**, **correctness**, and **s
 ✅ **Scalability:** Horizontal scaling + partial sync = millions of users
 ✅ **Security:** JWT + RBAC + TLS = production-ready security
 
-**Implementation Status:** All core architecture components implemented and verified in v0.1.0. Future enhancements (Vue/Svelte adapters, cross-tab sync, advanced storage) planned for subsequent releases.
+**Implementation Status:** All core architecture components implemented and verified in v0.1.0, including cross-tab synchronization via BroadcastChannel API. Future enhancements (Vue/Svelte adapters, Protobuf protocol, OPFS/SQLite storage, Text/Counter/Set CRDT APIs) planned for subsequent releases. Note: CRDT implementations exist in Rust core but are not yet exposed in SDK API.

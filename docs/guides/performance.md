@@ -31,7 +31,7 @@ SyncKit is designed for **"fast enough for real-world use, easy to optimize"** r
 | **Queue operation** | <1ms | ~0.021ms (offline queue) |
 | **Network message decode** | <1ms | ~0.020ms |
 | **Sync latency** | <100ms | 10-100ms (network dependent) |
-| **Bundle size (full)** | <100KB | 58KB gzipped |
+| **Bundle size (full)** | <100KB | 59KB gzipped |
 | **Bundle size (lite)** | <100KB | 45KB gzipped |
 | **Memory** | <10MB | ~3MB (10K documents) |
 | **Initial load** | <3s | ~1.2s (cached WASM) |
@@ -206,12 +206,12 @@ SyncKit offers 2 optimized variants:
 Variant        WASM      SDK       Total     Use Case
 ─────────────────────────────────────────────────────────────
 Lite           44 KB     1.5 KB    ~45 KB    Offline-only (no network)
-Default        49 KB     9.4 KB    ~58 KB    With network sync (recommended)
+Default        49 KB     9.4 KB    ~59 KB    With network sync (recommended)
 
 Compare to competitors (gzipped):
 - Yjs:               ~19 KB   (pure JS, no persistence)
 - SyncKit Lite:      ~45 KB   (WASM + JS, offline-only)
-- SyncKit Default:   ~58 KB   (WASM + JS, full sync)
+- SyncKit Default:   ~59 KB   (WASM + JS, full sync)
 - Automerge:      ~60-78 KB   (WASM + JS)
 - Firebase:        ~150 KB   (pure JS)
 - RxDB:           ~100 KB+   (pure JS)
@@ -233,7 +233,7 @@ const synckit = new SyncKit({
   // No serverUrl - network layer not loaded
 })
 
-// Default (~58 KB) - Full network sync
+// Default (~59 KB) - Full network sync
 import { SyncKit } from '@synckit/sdk'
 
 const synckit = new SyncKit({
@@ -243,7 +243,7 @@ const synckit = new SyncKit({
 })
 ```
 
-**Rule of thumb:** Use Default variant if you need server sync (adds only 13KB). Use Lite if you're building a purely local-first app with no server.
+**Rule of thumb:** Use Default variant if you need server sync (adds only 14KB). Use Lite if you're building a purely local-first app with no server.
 
 ### Tree-Shaking
 
@@ -1107,7 +1107,7 @@ function PerformanceDashboard() {
 
 **Key Optimizations:**
 
-1. **Bundle size** - Choose the right variant, tree-shake, code split (45-58KB gzipped)
+1. **Bundle size** - Choose the right variant, tree-shake, code split (45-59KB gzipped)
 2. **Memory** - Proper cleanup, use hooks, garbage collection (<10MB)
 3. **Local operations** - Debouncing, batching, efficient subscriptions (~2ms updates)
 4. **Network** - Monitor status, optimize config, delta syncing (10-100ms sync)

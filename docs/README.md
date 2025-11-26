@@ -127,7 +127,7 @@ Learn from working examples:
 ### Performance
 
 **Bundle Size (gzipped):**
-- **Default variant:** ~58KB (document sync with network protocol)
+- **Default variant:** ~59KB (document sync with network protocol)
 - **Lite variant:** ~45KB (local-only, no network protocol)
 - **Competitive:** Larger than Yjs (~19KB), smaller than Automerge (~60-78KB), much smaller than Firebase (~150KB)
 
@@ -178,10 +178,10 @@ if (navigator.storage && navigator.storage.persist) {
 
 **Changes not syncing across tabs**
 ```typescript
-// Note: Cross-tab sync via BroadcastChannel is not yet implemented in v0.1.0
-// For now, each tab connects independently to the server
-// Multi-tab scenarios work through server-mediated sync
-const todo = sync.document<Todo>('todo-1')  // Same ID in both tabs
+// ✅ Cross-tab sync via BroadcastChannel IS implemented in v0.1.0
+// Changes sync automatically across tabs via BroadcastChannel API
+// Multi-tab scenarios work both locally (BroadcastChannel) and via server
+const todo = sync.document<Todo>('todo-1')  // Same ID in both tabs - syncs automatically!
 ```
 
 **TypeScript errors**
@@ -232,6 +232,7 @@ We welcome contributions!
 - ✅ Core Rust engine (LWW sync, Text CRDT, protocol)
 - ✅ TypeScript SDK (Document API, storage, React hooks)
 - ✅ Network sync layer (WebSocket, offline queue, auto-reconnect)
+- ✅ Cross-tab sync (BroadcastChannel for local multi-tab synchronization)
 - ✅ React integration (`useSyncDocument`, `useSyncField`, `useNetworkStatus`, `useSyncState`)
 - ✅ TypeScript server (WebSocket sync, JWT auth, PostgreSQL)
 - ✅ Example applications (todo app, collaborative editor, project management)
@@ -241,7 +242,6 @@ We welcome contributions!
 
 ### What's Next 🚧
 
-- 🚧 Cross-tab sync (BroadcastChannel for local multi-tab)
 - 🚧 Multi-language servers (Python, Go, Rust)
 - 🚧 Vue & Svelte adapters
 - 🚧 Advanced storage adapters (OPFS, SQLite)

@@ -6,7 +6,7 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Dancode-188/synckit/ci.yml?branch=main)](https://github.com/Dancode-188/synckit/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Bundle Size](https://img.shields.io/badge/bundle%20size-~58KB%20(~45KB%20lite)-brightgreen)](https://bundlephobia.com)
+[![Bundle Size](https://img.shields.io/badge/bundle%20size-~59KB%20(~45KB%20lite)-brightgreen)](https://bundlephobia.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -49,7 +49,7 @@ True offline-first architecture—not just caching. Your app works perfectly on 
 
 ### 📦 **Enterprise Features, Startup Bundle**
 
-**~58 KB gzipped** (9KB SDK + 48KB WASM) - Complete WASM-based sync engine with TypeScript SDK.
+**~59 KB gzipped** (9KB SDK + 48KB WASM) - Complete WASM-based sync engine with TypeScript SDK.
 
 Current features (v0.1.0):
 - ✅ Offline-first sync (LWW)
@@ -72,7 +72,7 @@ Open source and self-hostable. No vendor lock-in, no surprise $2,000/month bills
 ### ⚡ **Fast by Design**
 - <1ms local operations (~5-20μs single field update)
 - <100ms sync latency (10-50ms p95)
-- ~58KB bundle (9KB SDK + 48KB WASM), ~45KB lite option
+- ~59KB bundle (9KB SDK + 48KB WASM), ~45KB lite option
 - Sub-200KB total with React
 
 ### 🛡️ **Data Integrity Guaranteed**
@@ -88,7 +88,7 @@ Open source and self-hostable. No vendor lock-in, no surprise $2,000/month bills
 |---------|:-------:|:--------:|:--------:|:---:|:---------:|
 | **True Offline-First** | ✅ Native | ⚠️ Cache only<br/>(40MB limit) | ❌ None<br/>([#357](https://github.com/supabase/supabase/issues/357) - 4+ years) | ✅ Full | ✅ Full |
 | **Works Without Server** | ✅ Yes | ❌ No | ❌ No | ✅ Yes | ✅ Yes |
-| **Bundle Size (gzipped)** | **~58KB**<br/>(45KB lite) | ~150KB | ~45KB | **~19KB** | ~60-78KB |
+| **Bundle Size (gzipped)** | **~59KB**<br/>(45KB lite) | ~150KB | ~45KB | **~19KB** | ~60-78KB |
 | **Text CRDT** | 🚧 v0.2.0 | ❌ No | ❌ No | ✅ Yes | ✅ Yes |
 | **Counters/Sets** | 🚧 v0.2.0 | ❌ No | ❌ No | ✅ Yes | ✅ Yes |
 | **Automatic Conflicts** | ✅ LWW | ✅ LWW | ⚠️ Manual | ✅ CRDT | ✅ CRDT |
@@ -159,7 +159,7 @@ function TodoApp() {
 - ✅ Persists data in IndexedDB
 - ✅ Resolves conflicts automatically
 
-**Bundle:** SyncKit (~58 KB gzipped) + React (~130 KB) = **~188 KB total**
+**Bundle:** SyncKit (~59 KB gzipped) + React (~130 KB) = **~189 KB total**
 
 **Size-critical?** `import { SyncKit } from '@synckit/sdk/lite'` (~45 KB gzipped, local-only)
 
@@ -176,14 +176,14 @@ function TodoApp() {
 - **🗄️ Local Persistence** - IndexedDB storage, unlimited capacity
 - **🔀 Conflict Resolution** - Automatic Last-Write-Wins (LWW) merge
 - **⚡ Fast Operations** - <1ms local updates, <100ms sync latency
-- **📦 Compact Bundle** - ~58KB gzipped (9KB SDK + 48KB WASM)
+- **📦 Compact Bundle** - ~59KB gzipped (9KB SDK + 48KB WASM)
 - **🔐 Secure** - JWT authentication, RBAC permissions
 
 ### Framework Integration
 
 - **⚛️ React Hooks** - `useSyncDocument`, `useSyncField`, `SyncProvider`
 - **🌐 TypeScript Server** - Bun + Hono reference implementation
-- **📦 Multi-Variant** - Default (~58KB gzipped) or Lite (~45KB gzipped) builds
+- **📦 Multi-Variant** - Default (~59KB gzipped) or Lite (~45KB gzipped) builds
 
 ### Coming in v0.2.0
 
@@ -323,8 +323,9 @@ await counter.increment()
 ### What's Complete ✅
 
 - ✅ **Core Rust Engine** - LWW sync engine with CRDT foundation
-- ✅ **WASM Compilation** - 58KB gzipped (45KB lite), optimized performance
+- ✅ **WASM Compilation** - 59KB gzipped (45KB lite), optimized performance
 - ✅ **TypeScript SDK** - Document API, IndexedDB storage, offline queue
+- ✅ **Cross-Tab Sync** - BroadcastChannel-based sync across browser tabs
 - ✅ **React Integration** - `useSyncDocument`, `useSyncField`, `SyncProvider` hooks
 - ✅ **TypeScript Server** - WebSocket sync server with Bun + Hono
 - ✅ **Example Applications** - Todo app, collaborative editor, project management demos
@@ -333,7 +334,6 @@ await counter.increment()
 
 ### What's Next 🚧
 
-- 🚧 **Cross-Tab Sync** - BroadcastChannel-based sync across browser tabs (v0.1.1)
 - 🚧 **Text CRDTs** - Collaborative text editing (`useText` hook) for character-level sync
 - 🚧 **Counter CRDTs** - Distributed counters (`useCounter` hook) for conflict-free increments
 - 🚧 **Framework Adapters** - Vue composables (`@synckit/sdk/vue`), Svelte stores (`@synckit/sdk/svelte`)
@@ -379,7 +379,7 @@ Need enterprise support?
 ```
 Yjs:                ~19 KB ████
 SyncKit (lite):     ~45 KB █████████
-SyncKit (default):  ~58 KB ████████████
+SyncKit (default):  ~59 KB ████████████
 Automerge:       ~60-78 KB ████████████████
 Firebase:          ~150 KB ████████████████████████████████
 ```

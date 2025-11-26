@@ -472,9 +472,9 @@ if (syncState?.state === 'error') {
 
 See the [examples directory](../../examples) for complete working examples:
 
-- `examples/react-offline-first` - React app with offline-first sync
-- `examples/collaboration` - Real-time collaboration demo
-- `examples/sync-status` - Network status indicators
+- `examples/project-management` - Full-featured Kanban board with offline-first sync, cross-tab communication, and real-time collaboration
+- `examples/collaborative-editor` - Real-time collaborative text editing with conflict resolution
+- `examples/todo-app` - Simple todo list demonstrating basic offline-first patterns
 
 ## Migration Guide
 
