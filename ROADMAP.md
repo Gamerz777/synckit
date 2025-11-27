@@ -885,8 +885,9 @@ tests/chaos/chaos-helpers.ts                # Chaos test utilities
    - ✅ README with badges and Mermaid diagram
    - ✅ Comparison table (vs Firebase, Supabase, Yjs, Automerge)
    - ✅ Demo GIF (todo app demonstration)
-   - ⏳ HN post draft (in progress)
-   - ⏳ Feature highlight video (optional)
+   - ✅ LinkedIn: Product announcement published
+   - ✅ Hacker News: Show HN post published
+   - ❌ Feature highlight video (deferred to future)
 
 3. **Community Setup** ✅
    - ✅ GitHub repository public
